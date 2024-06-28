@@ -1,0 +1,17 @@
+/* Visit https://aka.ms/tsconfig to read more about this file */
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": ".",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true
+  },
+  "include": [ "src/**/*" ],
+  "exclude": [ "**/*.test.*", "src/frontend/**/*" ]
+}

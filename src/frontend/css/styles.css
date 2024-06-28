@@ -1,0 +1,52 @@
+/**
+ * Tooltips
+ */
+.info {
+  display: inline-block;
+  width: 1em;
+  text-wrap: nowrap;
+}
+
+.info .note {
+  visibility: hidden;
+}
+
+.info:hover .note {
+  visibility: visible;
+}
+
+/**
+ * Spinner
+ */
+@keyframes spinner-kf {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner,
+.spinner:before {
+  display: inline-block;
+  width: .75em;
+  height: .75em;
+  transform-origin: 50%;
+  border: 2px solid transparent;
+  border-color: #74a8d0 #74a8d0 transparent transparent;
+  border-radius: 50%;
+  content: "";
+  animation: linear spinner-kf 900ms infinite;
+  position: relative;
+  vertical-align: inherit;
+  line-height: inherit;
+}
+
+.spinner:before {
+  border-color: #74a8d0 #74a8d0 transparent transparent;
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  border-style: solid;
+}

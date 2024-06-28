@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A tool to help split amounts between parties on eCash">
+    <title>The Big Guy</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <header>
+      <h1>The Big Guy</h1>
+      <p>Ensuring everyone gets their share.</p>
+    </header>
+    <section id="prompt">
+      <h1>Split payments easily</h1>
+      <p class="tag">
+        Generate an address that ensures each party will get the agreed-upon share.
+      </p>
+      <p class="example">
+        When <span class="value">528 914 XEC</span> is received, Alice knows she will get 
+        <span class="value">476 019 XEC</span> for her <span class="value">90%</span> share,
+        and Bob is sure he will get <span class="value">52 891 XEC</span>.
+      </p>
+      <button>Start</button>
+    </section>
+    <section id="builder">
+      <form action="/manage" method="get">
+        <p>
+          <label for="address1">First Address:</label>
+          <input id="address1" type="text" name="address1" placeholder="ecash:address" required />
+          <label for="share1">Share:</label>
+          <input id="share1" type="number" name="share1" step="1" min="1" max="999" value="900" required />
+          <span class="validation"></span>
+        </p>
+        <p>
+          <label for="address2">Second Address:</label>
+          <input id="address2" type="text" name="address2" placeholder="ecash:address" required />
+          <label for="share2">Share:</label>
+          <input id="share2" type="number" name="share2" step="1" min="1" max="999" value="100" required />
+          <span class="validation"></span>
+        </p>
+        <p>
+          <label for="fee">Fee:</label>
+          <select id="fee" name="fee">
+            <option value="1200" selected="selected">Low</option>
+            <option value="2500">Average</option>
+            <option value="5000">High</option>
+            <option value="10000">Priority</option>
+          </select>
+          <span class="info">&#128712;
+            <span class="note">A minimum fee must be deducted from the input value, before
+              splitting. Low means around 12 XEC, high around 50 XEC, and priority is 100 XEC.</span>
+          </span>
+        </p>
+        <p>
+          <button type="reset">Clear</button>
+          <button type="submit">Manage</button>
+        </p>
+      </form>
+    </section>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="/js/bundle.js"></script>
+    <script>
+      tbg.examples.rotate("#prompt .example", "#fee", 21);
+      tbg.inputs.mirrorShares("#share1", "#share2");
+      tbg.inputs.validateForm({
+        addresses: [ "#address1", "#address2" ],
+        shares: [ "#share1", "#share2" ],
+        fee: "#fee"
+      });
+    </script>
+  </body>
+</html>

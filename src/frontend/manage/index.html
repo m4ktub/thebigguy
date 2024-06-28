@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A tool to help split amounts between parties on eCash">
+    <title>The Big Guy</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <header>
+      <h1><a href="/">The Big Guy</a></h1>
+      <p>Ensuring everyone gets their share.</p>
+    </header>
+    <section id="contract">
+      <h1>Details</span></h1>
+      <p class="summary">
+        <span class="address">Calculating... <span class="spinner"></span></span>
+        <span class="info">&#128712;
+          <span class="note">Payments to this address will appear below and can only be distributed to the parties in the specified proportions.</span>
+        </span>
+      </p>
+      <p class="fee value xec">
+        <span class="label">Fee</span>
+        <span class="value">...</span>
+      </p>
+      <p class="party">
+        <span class="label">First Party</span>
+        <span class="value address">...</span>
+        <span class="value share">...</span>
+      </p>
+      <p class="party">
+        <span class="label">Second Party</span>
+        <span class="value address">...</span>
+        <span class="value share">...</span>
+      </p>
+    </section>
+    <section id="outputs">
+      <table>
+        <thead>
+          <tr>
+            <th>In Block</th>
+            <th>Coin</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="3">
+              <span>Loading...</span>
+              <span class="spinner"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <template id="tpl-output-0">
+        <tr>
+          <td colspan="3">There are currently no outputs to split.</td>
+        </tr>
+      </template>
+      <template id="tpl-output-n">
+        <tr>
+          <td class="value block">0</td>
+          <td class="value outpoint">0</td>
+          <td class="value xec">0.00 XEC</td>
+          <td class="button">
+            <span class="info">
+              <button>Button</span></button>
+              <span class="spinner-ready"></span>
+              <span class="note">Note</span>
+            </span>
+          </td>
+        </tr>
+      </template>
+    </section>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="/js/bundle.js"></script>
+    <script>
+      tbg.manage.load({
+        details: {
+          contractAddress: "#contract .summary .address",
+          party1Address: "#contract .party:nth-child(4) .address",
+          party2Address: "#contract .party:nth-child(5) .address",
+          party1Share: "#contract .party:nth-child(4) .share",
+          party2Share: "#contract .party:nth-child(5) .share",
+          fee: "#contract .fee .value"
+        },
+        outputs: {
+          table: "#outputs table",
+          tpl: {
+            empty: "#tpl-output-0",
+            row: "#tpl-output-n"
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

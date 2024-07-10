@@ -32,8 +32,10 @@
     "clean:dist": "rimraf dist",
     "compile:backend": "tsc -p tsconfig.json",
     "compile:frontend": "ts-node scripts/bundle.ts src/frontend/js/main.ts",
-    "build:backend": "npm run compile:backend",
-    "build:frontend": "ts-node scripts/copy.ts src/frontend dist/src/frontend && npm run compile:frontend",
+    "build:backend": "npm run compile:backend && npm run copy:https",
+    "build:frontend": "npm run copy:frontend && npm run compile:frontend",
+    "copy:https": "ts-node scripts/copy.ts etc/https dist/etc/https",
+    "copy:frontend": "ts-node scripts/copy.ts src/frontend dist/src/frontend",
     "build": "npm run clean:dist && npm run build:backend && npm run build:frontend",
     "test": "jest --workerThreads",
     "start": "node dist/src/server.js"

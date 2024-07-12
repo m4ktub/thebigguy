@@ -1,23 +1,90 @@
 /**
- * Tooltips
+ *  general
  */
-.info {
-  display: inline-block;
-  width: 1em;
-  text-wrap: nowrap;
+ 
+ body {
+  margin: 0;
+  color: white;
+  font-family: "Poppins", sans-serif;
+  background-color: #000c25;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.info .note {
-  visibility: hidden;
+header {
+  background: #1a253b;
+  padding: 20px;
 }
 
-.info:hover .note {
-  visibility: visible;
+header h1 {
+  margin: 0;
+  padding-left: 40px;
+  background-image: url(/favicon-32x32.png);
+  background-repeat: no-repeat;
+}
+
+header a {
+  color: white;
+  text-decoration: none;
+}
+
+header a:hover {
+  text-decoration: underline;
+}
+
+header p {
+  margin: 0;
+  font-size: smaller;
+  color: #00abe7;
+  padding-left: 47px;
+}
+
+button {
+  color: white;
+  padding: 8px 32px;
+  background-color: #2196f3;
+  border: none;
+}
+
+button:hover {
+  color: #000c25;
+  cursor: pointer;
+}
+
+button[type='reset'] {
+  color: white;
+  padding: .5em 2em;
+  border: 1px solid #1a253b;
+  background-color: #000c25;
+}
+
+button[type='reset']:hover {
+  background-color: #1a253b;
+  cursor: pointer;
 }
 
 /**
- * Spinner
+ * tooltips
  */
+
+.info .note {
+  display: none;
+  position: absolute;
+  width: 400px;
+  padding: 8px;
+  margin-left: 8px;
+  background: #000c25;
+  border: 1px solid gray;
+}
+
+.info:hover .note {
+  display: inline;
+}
+
+/**
+ * spinner
+ */
+
 @keyframes spinner-kf {
   0% {
     transform: rotate(0deg);
@@ -49,4 +116,247 @@
   left: -2px;
   top: -2px;
   border-style: solid;
+}
+
+/**
+ *  homepage
+ */
+
+section#prompt {
+  background: #1a253b;
+  padding-top: 20px;
+  padding-left: 60px;
+  padding-bottom: 60px;
+  padding-right: 60px;
+}
+
+section#prompt h1 {
+  font-size: xx-large;
+}
+
+section#prompt p.example {
+  border: 1px solid #00abe7;
+  background-color: #000c25;
+  padding: 20px;
+}
+
+section#prompt p.example .value {
+  color: #ff21d0;
+}
+
+@keyframes example-switch {
+  0% {
+    background-color: #000c25;
+  }
+  94% {
+    background-color: #000c25;
+  }
+  95% {
+    background-color: #00abe7;
+  }
+  100% {
+    background-color: #000c25;
+  }
+}
+
+section#prompt p.example {
+  animation: example-switch 21s ease-in infinite;
+}
+
+section#builder {
+  padding-top: 20px;
+  padding-left: 60px;
+  padding-right: 60px;
+}
+
+section#builder form input {
+  color: white;
+  border: 1px solid #ff21d0;
+  background-color: #1a253b;
+}
+
+section#builder form select {
+  color: white;
+  border: 1px solid #ff21d0;
+  background-color: #1a253b;
+}
+
+section#builder form input[type="text"] {
+  padding: 8px 16px;
+  width: 300px;
+}
+
+section#builder form select {
+  padding: 8px 16px;
+}
+
+section#builder form input[type="number"] {
+  padding: 8px 0px 8px 16px;
+  width: 55px;
+}
+
+section#builder form input[type="number"]::-webkit-inner-spin-button {
+  opacity: 1;
+  height: 30px;
+}
+
+section#builder form p label {
+  display: inline-block;
+  text-align: right;
+  margin-right: 1em;
+  width: 60px;
+}
+
+section#builder form p label:first-child {
+  width: 125px;
+}
+
+section#builder form p:last-child {
+  padding-left: 145px;
+}
+
+/**
+ * manage
+ */
+
+section#contract {
+  border: 1px solid #00abe7;
+  background-color: #000c25;
+  padding: 20px;
+  margin-top: 36px;
+  margin-left: 60px;
+  margin-bottom: 36px;
+  margin-right: 60px;
+}
+
+section#contract h1 {
+  margin: 0;
+}
+
+section#contract .address a {
+  color: #00abe7;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: x-large;
+}
+
+section#contract .address a:hover {
+  text-decoration: underline;
+}
+
+section#contract .summary .address {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #1a253b;
+}
+
+section#contract .summary a {
+  font-size: x-large;
+}
+
+section#contract .value {
+  color: #ff21d0;
+}
+
+section#contract .label::after {
+  content: ":";
+}
+
+section#contract .share::before {
+  content: " → ";
+  color: white;
+}
+
+section#outputs {
+  background-color: #000c25;
+  margin-left: 60px;
+  margin-right: 60px;
+  margin-bottom: 60px;
+}
+
+section#outputs table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+section#outputs table tr {
+  height: 40px;
+}
+
+section#outputs table tbody tr:hover {
+  background-color: #1a253b;
+}
+
+section#outputs table tbody tr:hover td[colspan="4"] {
+  background-color: #000c25;
+}
+
+section#outputs table th {
+  text-align: center;
+  vertical-align: middle;
+  padding: 8px 16px;
+  border-bottom: 1px solid white;
+  width: 0;
+  text-wrap: nowrap;
+}
+
+section#outputs table th:nth-child(3) {
+  text-align: right;
+}
+
+section#outputs table th:nth-child(4) {
+  width: auto;
+  text-align: left;
+}
+
+section#outputs table td {
+  text-align: center;
+  vertical-align: middle;
+  padding: 4px 8px;
+  text-wrap: nowrap;
+}
+
+section#outputs table td:nth-child(3) {
+  text-align: right;
+}
+
+section#outputs table td:nth-child(4) {
+  text-align: left;
+}
+
+section#outputs table .info:hover .note {
+  display: inline;
+  position: unset;
+  width: unset;
+  padding: unset;
+  margin-left: unset;
+  background: unset;
+  border: unset;
+}
+
+section#outputs table a {
+  color: #00abe7;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: larger;
+}
+
+section#outputs table a:hover {
+  text-decoration: underline;
+}
+
+section#outputs table td.block span {
+  color: gray;
+}
+
+section#outputs table td.value.xec data {
+  color: #ff21d0;
+}
+
+section#outputs table td button:disabled {
+  border: 1px solid #000c25;
+  padding: 7px 31px;
+  color: gray;
+  background-color: #1a253b;
+  cursor: default;
 }

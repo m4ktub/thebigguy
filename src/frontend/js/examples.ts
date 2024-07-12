@@ -18,8 +18,8 @@ function generate(fee: number) {
 
   return `When <span class="value xec">${formatNumber(value)} XEC</span> is received, Alice
           knows she will get <span class="value xec">${formatNumber(aliceValue)} XEC</span>
-          for her <span class="value xec">${share1}%</span> share, and Bob is sure he will
-          get <span class="value">${formatNumber(bobValue)} XEC</span>.`;
+          for her <span class="value pct">${share1}%</span> share, and Bob is sure he will
+          get <span class="value xec">${formatNumber(bobValue)} XEC</span>.`;
 }
 
 function formatNumber(n: number) {

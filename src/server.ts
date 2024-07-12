@@ -20,7 +20,8 @@ const app = express();
 // serve static website
 //
 
-app.use(express.static(path.join(__dirname, 'frontend')));
+const staticHandler = express.static(path.join(__dirname, 'frontend'));
+app.use(staticHandler);
 
 //
 // register backend api
@@ -54,19 +55,29 @@ const httpsKeyPath = process.env.HTTPS_KEY || path.join(__dirname, '../etc/https
 const httpsCertPath = process.env.HTTPS_CERT || path.join(__dirname, '../etc/https/cert.pem');
 
 if (!httpsPort) {
+  // without HTTPS port, simply launch the application in an HTTP server
   http.createServer(app).listen(port, () => {
     console.log(`HTTP server is running on port ${port}`);
   });
 } else {
+  // load the required private key and certificate chain
   const options = {
     key: fs.readFileSync(httpsKeyPath),
     cert: fs.readFileSync(httpsCertPath)
   };
 
-  http.createServer(redirect("https", httpsPort)).listen(port, () => {
+  // create HTTP application that redirects all requests to HTTPS...
+  const httpRedirect = redirect("https", httpsPort, {
+    // ... except when serving Let's Encrypt challenges
+    '/.well-known/acme-challenge/': staticHandler
+  });
+
+  // launch HTTP redirect server
+  http.createServer(httpRedirect).listen(port, () => {
     console.log(`HTTP redirect is running on port ${port}`);
   });
 
+  // launch the application only in an HTTPS server
   https.createServer(options, app).listen(httpsPort, () => {
     console.log(`HTTPS server is running on port ${httpsPort}`);
   });

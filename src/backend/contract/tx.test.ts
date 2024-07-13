@@ -85,20 +85,23 @@ describe('createTx', () => {
     const tx = createTx(new Ecc(), prvKey, utxo(8000), fee, parties);
 
     const opsIter = tx.inputs[0].script?.ops();
+    const prevouts = opsIter?.next();
     const outputs = opsIter?.next();
     const sig = opsIter?.next();
     const preimage = opsIter?.next();
     const script = opsIter?.next();
     const end = opsIter?.next();
 
+    if (!isPushOp(prevouts)) fail();
     if (!isPushOp(outputs)) fail();
     if (!isPushOp(sig)) fail();
     if (!isPushOp(preimage)) fail();
     if (!isPushOp(script)) fail();
     expect(end).toBeUndefined();
 
-    expect(outputs.data.length).toBe(68); // 2 * (8 byte + 26 byte)
-    expect(sig.data.length).toBe(65);     // 64 byte + 1 byte
+    expect(prevouts.data.length).toBe(36); // 1 * (32 bytes + 4 bytes)
+    expect(outputs.data.length).toBe(68);  // 2 * (8 bytes + 26 bytes)
+    expect(sig.data.length).toBe(65);      // 64 bytes + 1 byte
 
     const preimageHex = toHex(preimage.data);
     const scriptHex = toHex(script.data);

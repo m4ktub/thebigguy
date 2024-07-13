@@ -1,6 +1,6 @@
 import '@jest/globals';
 import { toHex, Script, OP_RETURN, fromHex } from 'ecash-lib';
-import { outputScriptForAddress, pushNumberOp, serializeOutputs } from './utils';
+import { outputScriptForAddress, pushNumberOp, serializeOutputs, serializePrevouts } from './utils';
 
 describe('outputScriptForAddress', () => {
   test('p2pkh', () => {
@@ -20,6 +20,43 @@ describe('outputScriptForAddress', () => {
   test('invalid fails', () => {
     const addr = "ecash:qr0";
     expect(() => outputScriptForAddress(addr)).toThrow();
+  });
+});
+
+describe('serializePrevouts', () => {
+  test('demo', () => {
+    const inputs = [{
+      prevOut: {
+        txid: "0000000000000000000000000000000000000000000000000000000000000001",
+        outIdx: 0
+      }
+    }];
+
+    const result = serializePrevouts(inputs);
+    expect(toHex(result)).toEqual("010000000000000000000000000000000000000000000000000000000000000000000000");
+  });
+
+  test('other', () => {
+    const inputs = [
+      {
+        prevOut: {
+          txid: "c9f6d2785072af21fb9c4652baecd74d76681eea8038f5282763d1892ea5f915",
+          outIdx: 1
+        }
+      },
+      {
+        prevOut: {
+          txid: "c9f6d2785072af21fb9c4652baecd74d76681eea8038f5282763d1892ea5f915",
+          outIdx: 71
+        }
+      }
+    ];
+
+    const result = serializePrevouts(inputs);
+    expect(toHex(result)).toEqual(
+      "15f9a52e89d1632728f53880ea1e68764dd7ecba52469cfb21af725078d2f6c901000000" +
+      "15f9a52e89d1632728f53880ea1e68764dd7ecba52469cfb21af725078d2f6c947000000"
+    );
   });
 });
 

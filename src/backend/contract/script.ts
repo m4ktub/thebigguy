@@ -52,9 +52,12 @@ export const SCRIPT_NOPAY = Script.fromOps([OP_RETURN]);
 // Create the P2SH script.
 //
 // The script expects the following pushes to the stack:
+// - Serialized prevouts, to validate that the tx has a single input
 // - Serialized outputs, to validate shares
 // - Schnorr signature, to ensure preimage is valid
-// - BIP 143 preimage, to get the input value, the script, and validate outputs
+// - BIP 143 preimage, to
+//     1) validate prevouts and outputs, and
+//     2) get the input value and the script
 //
 
 export interface Party {
@@ -72,10 +75,10 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
   // ensure a minimum fee of 1 sat/byte
   //
   // Each P2PKH party adds no more than 167 bytes to the transaction.
-  // A 2-party 500/500 P2PKH with 2000 fee will produce a 1029 byte transaction.
-  // A 3-party 400/300/300 will produce a 1196 byte transaction.
+  // A 2-party 500/500 P2PKH with 2000 fee will produce a 1066 byte transaction.
+  // A 3-party 400/300/300 will produce a 1233 byte transaction.
   //
-  const minFee = 695 + (167 * parties.length);
+  const minFee = 732 + (167 * parties.length);
   if (fee < minFee) {
     throw new Error(`The fee must be at least 1 sat per byte, that is, ${minFee} or more`);
   }
@@ -140,7 +143,7 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
 
     //
     // start by checking transaction signature
-    // <outputs> <sig,sigflags> <preimage> <pubkey>
+    // <prevouts> <outputs> <sig,sigflags> <preimage> <pubkey>
     //
 
     OP_3DUP,
@@ -149,7 +152,7 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
 
     //
     // check preimage with same signature
-    // <outputs> <sig,sigflags> <preimage> <pubkey>
+    // <prevouts> <outputs> <sig,sigflags> <preimage> <pubkey>
     //
 
     OP_ROT,
@@ -157,57 +160,93 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
     OP_SPLIT,
     OP_DROP,
 
-    // <outputs> <preimage> <pubkey> <sig>
+    // <prevouts> <outputs> <preimage> <pubkey> <sig>
 
     pushNumberOp(2),
     OP_PICK,
 
-    // <outputs> <preimage> <pubkey> <sig> <preimage>
+    // <prevouts> <outputs> <preimage> <pubkey> <sig> <preimage>
 
     OP_SHA256,
     OP_ROT,
 
-    // <outputs> <preimage> <sig> <sha256(preimage)> <pubkey>
+    // <prevouts> <outputs> <preimage> <sig> <sha256(preimage)> <pubkey>
 
     OP_CHECKDATASIGVERIFY, // does the second sha256 before checking
 
     //
-    // extract script, value, and hashoutputs from preimage
-    // <outputs> <preimage>
+    // extract hashprevouts, script, value, and hashoutputs from preimage
+    // <prevouts> <outputs> <preimage>
     //
     // The script code is variable so we count 52 bytes back for the value.
     //
 
-    pushNumberOp(104), // BIP-143 items 1 - 5
+    pushNumberOp(4),  // drop nVersion
     OP_SPLIT,
-    OP_NIP,            // drop version, hashPrevouts, hashSequence, outpoint
+    OP_NIP,
 
-    // <outputs> <size,script><value><nsequence><hashoutputs><nlocktime><sighash>
+    pushNumberOp(32), // split hashPrevouts
+    OP_SPLIT,
 
-    OP_SIZE,
-    pushNumberOp(52),  // size of BIP items 6 - 10 (all but script code)
+    pushNumberOp(68), // drop hashSequence, outpoint
+    OP_SPLIT,
+    OP_NIP,
+
+    // <prevouts> <outputs> <hashprevouts> <size,script><value><nsequence><hashoutputs><nlocktime><sighash>
+
+    OP_SIZE,          // split script (counting from end)
+    pushNumberOp(52),
     OP_SUB,
     OP_SPLIT,
 
-    // <outputs> <size,script> <value><nsequence><hashoutputs><nlocktime><sighash>
+    // <prevouts> <outputs> <hashprevouts> <size,script> <value><nsequence><hashoutputs><nlocktime><sighash>
 
-    pushNumberOp(8),
+    pushNumberOp(8),  // split value
     OP_SPLIT,
-    pushNumberOp(4),
+
+    pushNumberOp(4),  // drop nSequence
     OP_SPLIT,
-    OP_NIP,           // drop nsequence
-    pushNumberOp(32),
+    OP_NIP,
+
+    pushNumberOp(32), // split hashOutputs
     OP_SPLIT,
+
     OP_DROP,          // drop nlocktime, sighash
 
     //
     // check outputs SHA256d
-    // <outputs> <size,script> <value as bin> <hashoutputs>
+    // <prevouts> <outputs> <hashprevouts> <size,script> <value as bin> <hashoutputs>
     //
 
-    pushNumberOp(3),
-    OP_PICK,          // duplicates
+    pushNumberOp(4),
+    OP_PICK,
     OP_HASH256,
+    OP_EQUALVERIFY,
+
+    //
+    // validate single input by checking prevouts length
+    // <prevouts> <outputs> <hashprevouts> <size,script> <value as bin>
+    //
+    // Ensuring a single input is needed because a transaction could be made
+    // with multiple coins of the same value. The input script for each coin
+    // would validate the same outputs but only one coin would be split and
+    // all the others would add to fees.
+    //
+
+    pushNumberOp(4),
+    OP_ROLL,
+    OP_SIZE,
+    pushNumberOp(36),
+    OP_EQUALVERIFY,
+
+    //
+    // check prevouts SHA256d
+    // <outputs> <hashprevouts> <size,script> <value as bin> <prevouts>
+    //
+
+    OP_HASH256,
+    pushNumberOp(3),
+    OP_ROLL,
     OP_EQUALVERIFY,
 
     //
@@ -486,9 +525,7 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
         // possible to ensure that the fees are never less than the chosen amount.
         //
         // Without this it would be, in principle, possible to abuse high priority
-        // contracts to pay for other transfers by including more inputs and more
-        // outputs that do not add to the fees. With this, it's only possible to have
-        // more inputs which can only increase the fee.
+        // contracts and redirect some of the fees to another output.
         //
 
         OP_1ADD, // only a 0x00 tail is a valid number

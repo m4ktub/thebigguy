@@ -110,7 +110,7 @@ describe('createScript', () => {
     expect(() => createScript(prvKey, 1000, parties(500, 500))).toThrow();
     expect(createScript(prvKey, 1100, parties(500, 500))).toBeInstanceOf(Script);
     expect(() => createScript(prvKey, 1100, parties(400, 400, 300))).toThrow();
-    expect(createScript(prvKey, 1200, parties(400, 300, 300))).toBeInstanceOf(Script);
+    expect(createScript(prvKey, 1300, parties(400, 300, 300))).toBeInstanceOf(Script);
     // fee too high
     expect(() => createScript(prvKey, 2113929217 + 1, parties(500, 500))).toThrow();
     // no floats on shares
@@ -196,15 +196,15 @@ describe('createScript', () => {
   test('v1 stability', () => {
     const script1 = createScript(prvKey, 2000, parties(900, 100));
     const hash201 = toHex(shaRmd160(script1.bytecode));
-    expect(hash201).toEqual("49c5208c549f21fd5e83d8fb1f5e1eab1d914a6f");
+    expect(hash201).toEqual("c7be5f5d1d2ff1f1c62104a56c694ff21652835b");
 
     const script2 = createScript(prvKey, 2001, parties(900, 100));
     const hash202 = toHex(shaRmd160(script2.bytecode));
-    expect(hash202).toEqual("3aebdf774d9faf4264e95923e2912d541d836d2c");
+    expect(hash202).toEqual("074a71f01dbedc11e952b0c5f50c654e957ef531");
 
     const script3 = createScript(prvKey, 2000, parties(899, 101));
     const hash203 = toHex(shaRmd160(script3.bytecode));
-    expect(hash203).toEqual("f56d80498776db3550763e35b4c6fcedd51af2b1");
+    expect(hash203).toEqual("d224716d190f66aefb91e38a26e74f42944a486a");
   });
 });
 

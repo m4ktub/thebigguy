@@ -85,16 +85,18 @@ const signedTx = createTx(ecc, PRV_KEY, utxo, request.fee, [
 const redeemScript = signedTx.inputs[0].script as xeclib.Script
 const opsIter = redeemScript.ops();
 
+const prevouts = opsIter.next() as xeclib.PushOp;
 const outputs = opsIter.next() as xeclib.PushOp;
 const sig = opsIter.next() as xeclib.PushOp;
 const preimage = opsIter.next() as xeclib.PushOp;
 const script = opsIter.next() as xeclib.PushOp;
 
-console.log("       tx:", signedTx.serSize(), xeclib.toHex(signedTx.ser()));
+console.log("      tx:", signedTx.serSize(), xeclib.toHex(signedTx.ser()));
 console.log();
-console.log("  outputs:", outputs.data.length, xeclib.toHex(outputs.data));
-console.log("      sig:", sig.data.length, xeclib.toHex(sig.data));
-console.log(" preimage:", preimage.data.length, xeclib.toHex(preimage.data));
+console.log("prevouts:", prevouts.data.length, xeclib.toHex(prevouts.data));
+console.log(" outputs:", outputs.data.length, xeclib.toHex(outputs.data));
+console.log("     sig:", sig.data.length, xeclib.toHex(sig.data));
+console.log("preimage:", preimage.data.length, xeclib.toHex(preimage.data));
 console.log();
-console.log("  address:", xecaddr.encode("ecash", "P2SH", xeclib.shaRmd160(script.data)))
-console.log("   script:", script.data.length, xeclib.toHex(script.data));
+console.log(" address:", xecaddr.encode("ecash", "P2SH", xeclib.shaRmd160(script.data)))
+console.log("  script:", script.data.length, xeclib.toHex(script.data));

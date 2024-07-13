@@ -1,4 +1,15 @@
-import { OP_0, Script, WriterBytes, WriterLength, pushBytesOp, writeTxOutput, type TxOutput } from 'ecash-lib';
+import {
+  OP_0,
+  Script,
+  WriterBytes,
+  WriterLength,
+  pushBytesOp,
+  writeOutPoint,
+  writeTxOutput,
+  type TxInput,
+  type TxOutput,
+  type Writer
+} from 'ecash-lib';
 import * as xecaddr from 'ecashaddrjs';
 
 export function outputScriptForAddress(address: string): Script {
@@ -13,12 +24,20 @@ export function outputScriptForAddress(address: string): Script {
   }
 }
 
-export function serializeOutputs(outputs: TxOutput[]) {
+function serializeValues<T>(data: T[], writer: (v: T, w: Writer) => void) {
   const lengthWriter = new WriterLength();
-  outputs.forEach(o => writeTxOutput(o, lengthWriter));
-  const outputWriter = new WriterBytes(lengthWriter.length);
-  outputs.forEach(o => writeTxOutput(o, outputWriter));
-  return outputWriter.data;
+  data.forEach(value => writer(value, lengthWriter));
+  const bytesWriter = new WriterBytes(lengthWriter.length);
+  data.forEach(value => writer(value, bytesWriter));
+  return bytesWriter.data;
+}
+
+export function serializePrevouts(inputs: TxInput[]) {
+  return serializeValues(inputs.map(i => i.prevOut), writeOutPoint);
+}
+
+export function serializeOutputs(outputs: TxOutput[]) {
+  return serializeValues(outputs, writeTxOutput);
 }
 
 // https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/src/script/script.h#L363

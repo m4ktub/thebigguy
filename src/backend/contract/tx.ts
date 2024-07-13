@@ -1,7 +1,6 @@
 import {
-  ALL_ANYONECANPAY_BIP143,
+  ALL_BIP143,
   Ecc,
-  Int,
   Script,
   Tx,
   TxBuilder,
@@ -9,11 +8,12 @@ import {
   UnsignedTxInput,
   flagSignature,
   pushBytesOp,
-  sha256d
+  sha256d,
+  type Int
 } from "ecash-lib";
 import { createOutputs } from "./payment";
 import { createScript, type Party } from "./script";
-import { serializeOutputs } from "./utils";
+import { serializeOutputs, serializePrevouts } from "./utils";
 
 export interface Utxo {
   txid: string,
@@ -42,18 +42,19 @@ export function createTx(ecc: Ecc, prvKey: Uint8Array, utxo: Utxo, fee: number, 
     ]
   });
 
+  // produce serialized previouts
+  const serializedPrevouts = serializePrevouts(tx.inputs);
+
   // produce serialized outputs
   const serializedOutputs = serializeOutputs(tx.outputs);
 
-  // get the ANYONECANPAY BIP 143 preimage for the input
+  // get the ALL_BIP143 preimage for the input
   //
-  // The ANYONECANPAY flag is used because transactions will always have more
-  // than 546 bytes. This means there can be outputs for which a 1 sat per byte
-  // fee can't be ensured making it difficult to propagate the transaction.
-  // This way, at least, it's possible to build a transaction with more inputs
-  // which can only add fees because the outputs are fixed by the script.
+  // The ALL_BIP143 flag must be used because the script needs to receive both
+  // the prevouts and outputs as input and those need to be validated against
+  // hashPrevouts and hashOutputs.
   //
-  const sigHashType = ALL_ANYONECANPAY_BIP143;
+  const sigHashType = ALL_BIP143;
   const unsignedTx = UnsignedTx.fromTx(tx);
   const unsignedTxInput = new UnsignedTxInput({ inputIdx: 0, unsignedTx });
   const inputPreimage = unsignedTxInput.sigHashPreimage(sigHashType);
@@ -72,6 +73,7 @@ export function createTx(ecc: Ecc, prvKey: Uint8Array, utxo: Utxo, fee: number, 
 
   // produce the P2SH spend script (inputs + script)
   const spendScript = Script.fromOps([
+    pushBytesOp(serializedPrevouts),
     pushBytesOp(serializedOutputs),
     pushBytesOp(signature),
     pushBytesOp(inputPreimage.bytes),

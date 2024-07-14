@@ -39,19 +39,28 @@ function addOutputRows(options: PageOptions, data: P2SHResponse, utxos: Utxo[]) 
   // remove existing rows
   tbody.find("tr").remove();
 
+  // filter out dust utxos
+  //
+  // In this context, dust utxos are those that can't be spend with a fee of at
+  // least 1 sat/byte because the tx size will be bigger than the value. From
+  // an usability point of view, it's better to ommit those than to constantly
+  // present rows for which the user can do nothing.
+  //
+  const filteredUtxos = utxos.filter(utxo => BigInt(utxo.value) < data.dustValue);
+
   // find template row
-  const tplName = utxos.length == 0 ? "empty" : "row";
+  const tplName = filteredUtxos.length == 0 ? "empty" : "row";
   const tplNode = jquery(options.outputs.tpl[tplName]).get(0);
   if (!(tplNode instanceof HTMLTemplateElement)) {
     return;
   }
 
   // add rows to table
-  if (utxos.length == 0) {
+  if (filteredUtxos.length == 0) {
     jquery(tplNode.content.cloneNode(true)).appendTo(tbody);
   }
   else {
-    utxos.forEach(utxo => {
+    filteredUtxos.forEach(utxo => {
       const newRow = jquery(tplNode.content.cloneNode(true));
       updateRow(options, data, utxo, newRow);
 
@@ -96,11 +105,7 @@ function updateRow(_options: PageOptions, data: P2SHResponse, utxo: Utxo, row: J
   row.find(".value.xec").html(xec2html(utxo.value));
 
   // update value class, button, note based on value
-  if (BigInt(utxo.value) < data.fee) {
-    row.find(".value.xec").addClass("dust");
-    row.find(".button button").text("Burn").prop("disabled", true);
-    row.find(".button .note").text("The value is below the minimum fee. Spending this output is not yet supported.");
-  } else if (BigInt(utxo.value) < data.minValue) {
+  if (BigInt(utxo.value) < data.minValue) {
     row.find(".value.xec").addClass("small");
     row.find(".button button").text("Burn");
     row.find(".button .note").text("The value is too small to distribute. Spend the output and let miners get the fees.");

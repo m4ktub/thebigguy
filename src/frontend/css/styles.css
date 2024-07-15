@@ -167,6 +167,7 @@ section#builder {
   padding-top: 20px;
   padding-left: 60px;
   padding-right: 60px;
+  padding-bottom: 100px;
 }
 
 section#builder form input {
@@ -254,6 +255,17 @@ section#contract .summary a {
   font-size: x-large;
 }
 
+section#contract .info {
+  display: inline-block;
+  position: relative;
+}
+
+section#contract .info:hover .note {
+  display: block;
+  right: 0;
+  top: 24px;
+}
+
 section#contract .value {
   color: #ff21d0;
 }
@@ -316,22 +328,32 @@ section#outputs table td {
   text-wrap: nowrap;
 }
 
+section#outputs table td[colspan] {
+  text-align: left;
+  text-wrap: wrap;
+}
+
 section#outputs table td:nth-child(3) {
   text-align: right;
 }
 
 section#outputs table td:nth-child(4) {
   text-align: left;
+  position: relative;
+  text-wrap: wrap;
 }
 
-section#outputs table .info:hover .note {
-  display: inline;
-  position: unset;
-  width: unset;
-  padding: unset;
-  margin-left: unset;
-  background: unset;
-  border: unset;
+section#outputs table td:nth-child(4) .spinner {
+  position: absolute;
+  margin: 8px 4px;
+}
+
+section#outputs table td:nth-child(4) .note {
+  width: calc(100% - 26px);
+  max-width: 400px;
+  z-index: 1;
+  left: 0px;
+  top: 42px;
 }
 
 section#outputs table a {
@@ -359,4 +381,98 @@ section#outputs table td button:disabled {
   color: gray;
   background-color: #1a253b;
   cursor: default;
+}
+
+@media screen and (max-width: 800px) {
+  section#builder form p label {
+    text-align: left;
+    position: absolute;
+  }
+
+  section#builder form input {
+    margin-top: 24px;
+  }
+
+  section#builder form input[type="text"] {
+    width: calc(100% - 138px);
+    text-overflow: ellipsis;
+  }
+  
+  section#builder form select {
+    margin-top: 24px;
+  }
+
+  section#builder form p:last-child {
+    padding-left: 0;
+  }
+  
+  .info .note {
+    width: calc(100% - 240px);
+  }
+
+  section#contract .summary .address {
+    display: inline-flex;
+    width: calc(100% - 52px);
+  }
+
+  section#contract .summary a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  section#contract p.summary .note {
+    width: 174px;
+  }
+
+  section#contract .party .label {
+    display: inline-flex;
+    width: fit-content;
+  }
+ 
+  section#contract .party .address {
+    display: inline-flex;
+    width: calc(100% - 260px);
+    max-width: fit-content;
+    min-width: 150px;
+  }
+
+  section#contract .party .address a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+}
+
+@media screen and (max-width: 650px) {
+  section#outputs table th:nth-child(1) {
+    display: none;
+  }
+
+  section#outputs table td:nth-child(1):not([colspan])  {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 555px) {
+  section#outputs table th:nth-child(2) {
+    display: none;
+  }
+
+  section#outputs table td:nth-child(2) {
+    display: none;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  section#outputs table td[colspan] {
+    font-size: small;
+  }
+  
+  section#outputs table td:nth-child(3) {
+    font-size: small;
+  }
+
+  section#outputs table td:nth-child(4) button {
+    padding: 8px 22px;
+  }
 }

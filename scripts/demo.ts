@@ -77,7 +77,8 @@ const signedTx = createTx(ecc, PRV_KEY, utxo, request.fee, [
 // print details
 //
 // The transaction will have a spend script which is 4 pushes
-// - serialize outputs
+// - serialized prevouts
+// - serialized outputs
 // - signature
 // - preimage of single input
 // - script, as required for P2SH

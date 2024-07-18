@@ -75,10 +75,10 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
   // ensure a minimum fee of 1 sat/byte
   //
   // Each P2PKH party adds no more than 167 bytes to the transaction.
-  // A 2-party 500/500 P2PKH with 2000 fee will produce a 1066 byte transaction.
-  // A 3-party 400/300/300 will produce a 1233 byte transaction.
+  // A 2-party 500/500 P2PKH with 2000 fee will produce a 1112 byte transaction.
+  // A 3-party 400/300/300 will produce a 1279 byte transaction.
   //
-  const minFee = 732 + (167 * parties.length);
+  const minFee = 778 + (167 * parties.length);
   if (fee < minFee) {
     throw new Error(`The fee must be at least 1 sat per byte, that is, ${minFee} or more`);
   }
@@ -188,18 +188,21 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
     pushNumberOp(32), // split hashPrevouts
     OP_SPLIT,
 
-    pushNumberOp(68), // drop hashSequence, outpoint
+    pushNumberOp(32), // drop hashSequence
     OP_SPLIT,
     OP_NIP,
 
-    // <prevouts> <outputs> <hashprevouts> <size,script><value><nsequence><hashoutputs><nlocktime><sighash>
+    pushNumberOp(36), // split outpoint
+    OP_SPLIT,
+
+    // <prevouts> <outputs> <hashprevouts> <outpoint> <size,script><value><nsequence><hashoutputs><nlocktime><sighash>
 
     OP_SIZE,          // split script (counting from end)
     pushNumberOp(52),
     OP_SUB,
     OP_SPLIT,
 
-    // <prevouts> <outputs> <hashprevouts> <size,script> <value><nsequence><hashoutputs><nlocktime><sighash>
+    // <prevouts> <outputs> <hashprevouts> <outpoint> <size,script> <value><nsequence><hashoutputs><nlocktime><sighash>
 
     pushNumberOp(8),  // split value
     OP_SPLIT,
@@ -218,33 +221,43 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
     // <prevouts> <outputs> <hashprevouts> <size,script> <value as bin> <hashoutputs>
     //
 
-    pushNumberOp(4),
+    pushNumberOp(5),
     OP_PICK,
     OP_HASH256,
     OP_EQUALVERIFY,
 
     //
-    // validate single input by checking prevouts length
-    // <prevouts> <outputs> <hashprevouts> <size,script> <value as bin>
+    // check prevouts SHA256d
+    // <prevouts> <outputs> <hashprevouts> <outpoint> <size,script> <value as bin>
+    //
+
+    pushNumberOp(5),
+    OP_ROLL,
+    OP_DUP,
+    OP_HASH256,
+
+    pushNumberOp(5),
+    OP_ROLL,
+    OP_EQUALVERIFY,
+
+    //
+    // ensure single input by matching the outpoint with the first prevout
+    // <outputs> <outpoint> <size,script> <value as bin> <prevouts>
     //
     // Ensuring a single input is needed because a transaction could be made
     // with multiple coins of the same value. The input script for each coin
     // would validate the same outputs but only one coin would be split and
     // all the others would add to fees.
     //
+    // By matching the preimage outpoint with the first prevout provided as
+    // input we allow for more inputs that can add fees. This is important
+    // to make all coins potentially spendable because transactions will be
+    // bigger than 546 bytes.
+    //
 
-    pushNumberOp(4),
-    OP_ROLL,
-    OP_SIZE,
     pushNumberOp(36),
-    OP_EQUALVERIFY,
-
-    //
-    // check prevouts SHA256d
-    // <outputs> <hashprevouts> <size,script> <value as bin> <prevouts>
-    //
-
-    OP_HASH256,
+    OP_SPLIT,
+    OP_DROP,
     pushNumberOp(3),
     OP_ROLL,
     OP_EQUALVERIFY,

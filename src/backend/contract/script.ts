@@ -9,14 +9,13 @@ import {
   OP_AND,
   OP_BIN2NUM,
   OP_CAT,
-  OP_CHECKDATASIGVERIFY,
+  OP_CHECKDATASIG,
   OP_CHECKSIGVERIFY,
   OP_DIV,
   OP_DROP,
   OP_DUP,
   OP_ELSE,
   OP_ENDIF,
-  OP_EQUAL,
   OP_EQUALVERIFY,
   OP_GREATERTHANOREQUAL,
   OP_HASH160,
@@ -25,12 +24,13 @@ import {
   OP_LESSTHAN,
   OP_NIP,
   OP_NUM2BIN,
+  OP_OVER,
   OP_PICK,
   OP_RETURN,
+  OP_REVERSEBYTES,
   OP_ROLL,
   OP_ROT,
   OP_SHA256,
-  OP_SIZE,
   OP_SPLIT,
   OP_SUB,
   OP_SWAP,
@@ -40,7 +40,7 @@ import {
   pushBytesOp
 } from 'ecash-lib';
 import * as xecaddr from 'ecashaddrjs';
-import { outputScriptForAddress, pushNumberOp, serializeOutputs } from './utils';
+import { outputScriptForAddress, pushNumberOp } from './utils';
 
 //
 // constants
@@ -55,7 +55,9 @@ export const SCRIPT_NOPAY = Script.fromOps([OP_RETURN]);
 // - Serialized prevouts, to validate that the tx has a single input
 // - Serialized outputs, to validate shares
 // - Schnorr signature, to ensure preimage is valid
-// - BIP 143 preimage, to
+// - BIP 143 preimage split into its parts in multiple pushes. All elements
+//   are pushed separately except nLocktime and sighash which are pushed
+//   together because they are not needed. The preimage is used to
 //     1) validate prevouts and outputs, and
 //     2) get the input value and the script
 //
@@ -65,22 +67,11 @@ export interface Party {
   share: number
 }
 
-export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) {
+export function createScript(ecc: Ecc, prvKey: Uint8Array, fee: number, parties: Party[]) {
   // validate number of parties
-  if (parties.length < 2 || parties.length > 3) {
-    // less than 2 is useless, more than 3 will break the 520 byte push limit for the preimage
-    throw new Error("The contract must have between 2 and 3 parties");
-  }
-
-  // ensure a minimum fee of 1 sat/byte
-  //
-  // Each P2PKH party adds no more than 167 bytes to the transaction.
-  // A 2-party 500/500 P2PKH with 2000 fee will produce a 1112 byte transaction.
-  // A 3-party 400/300/300 will produce a 1279 byte transaction.
-  //
-  const minFee = 778 + (167 * parties.length);
-  if (fee < minFee) {
-    throw new Error(`The fee must be at least 1 sat per byte, that is, ${minFee} or more`);
+  if (parties.length < 2 || parties.length > 6) {
+    // less than 2 is useless, more than 6 will break the 520 byte push limit for the script
+    throw new Error("The contract must have between 2 and 6 parties");
   }
 
   // validate maximum fee to avoid problems with OP_NUM2BIN, after addition
@@ -130,155 +121,101 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
   const absoluteMinShare = minUnitForAllShares(parties);
 
   // extract public key to include in script, also validates that private key is acceptable
-  const ecc = new Ecc();
   const pubKey = ecc.derivePubkey(prvKey);
 
   // build script ops
   let ops = [
     //
-    // make the script specific to a particular prv/pub key
+    // inputs
+    // <prevouts> <outputs> <sig,sigflags> <preimage[1,2,3,4,5,6,7,8,9-10]>
     //
-
-    pushBytesOp(pubKey),
-
+    // To work around the 520-push limits, the preimage will be provided as
+    // multiple pushes. All preimage parts are pushed individually, except the
+    // last two because they are not needed.
     //
-    // start by checking transaction signature
-    // <prevouts> <outputs> <sig,sigflags> <preimage> <pubkey>
+    // Since the preimage is split, the verification of the multiple parts is
+    // done first and all signature verifications are left to the end.
     //
-
-    OP_3DUP,
-    OP_NIP,
-    OP_CHECKSIGVERIFY,
-
-    //
-    // check preimage with same signature
-    // <prevouts> <outputs> <sig,sigflags> <preimage> <pubkey>
-    //
-
-    OP_ROT,
-    pushNumberOp(64),
-    OP_SPLIT,
-    OP_DROP,
-
-    // <prevouts> <outputs> <preimage> <pubkey> <sig>
-
-    pushNumberOp(2),
-    OP_PICK,
-
-    // <prevouts> <outputs> <preimage> <pubkey> <sig> <preimage>
-
-    OP_SHA256,
-    OP_ROT,
-
-    // <prevouts> <outputs> <preimage> <sig> <sha256(preimage)> <pubkey>
-
-    OP_CHECKDATASIGVERIFY, // does the second sha256 before checking
-
-    //
-    // extract hashprevouts, script, value, and hashoutputs from preimage
-    // <prevouts> <outputs> <preimage>
-    //
-    // The script code is variable so we count 52 bytes back for the value.
-    //
-
-    pushNumberOp(4),  // drop nVersion
-    OP_SPLIT,
-    OP_NIP,
-
-    pushNumberOp(32), // split hashPrevouts
-    OP_SPLIT,
-
-    pushNumberOp(32), // drop hashSequence
-    OP_SPLIT,
-    OP_NIP,
-
-    pushNumberOp(36), // split outpoint
-    OP_SPLIT,
-
-    // <prevouts> <outputs> <hashprevouts> <outpoint> <size,script><value><nsequence><hashoutputs><nlocktime><sighash>
-
-    OP_SIZE,          // split script (counting from end)
-    pushNumberOp(52),
-    OP_SUB,
-    OP_SPLIT,
-
-    // <prevouts> <outputs> <hashprevouts> <outpoint> <size,script> <value><nsequence><hashoutputs><nlocktime><sighash>
-
-    pushNumberOp(8),  // split value
-    OP_SPLIT,
-
-    pushNumberOp(4),  // drop nSequence
-    OP_SPLIT,
-    OP_NIP,
-
-    pushNumberOp(32), // split hashOutputs
-    OP_SPLIT,
-
-    OP_DROP,          // drop nlocktime, sighash
-
-    //
-    // check outputs SHA256d
-    // <prevouts> <outputs> <hashprevouts> <size,script> <value as bin> <hashoutputs>
-    //
-
-    pushNumberOp(5),
-    OP_PICK,
-    OP_HASH256,
-    OP_EQUALVERIFY,
 
     //
     // check prevouts SHA256d
-    // <prevouts> <outputs> <hashprevouts> <outpoint> <size,script> <value as bin>
+    // <prevouts> <outputs> <sig,sigflags> <preimage[1]> <hashPrevouts> ...
+    // ... <preimage[3,4,5,6,7,8,9-10]>
     //
 
-    pushNumberOp(5),
+    pushNumberOp(11),
     OP_ROLL,
     OP_DUP,
     OP_HASH256,
-
-    pushNumberOp(5),
-    OP_ROLL,
+    pushNumberOp(9),
+    OP_PICK,
     OP_EQUALVERIFY,
 
     //
-    // ensure single input by matching the outpoint with the first prevout
-    // <outputs> <outpoint> <size,script> <value as bin> <prevouts>
+    // make sure that only one script input is used
+    // <outputs> <sig,sigflags> <preimage[1,2,3]> <outpoint> ...
+    // ... <preimage[5,6,7,8,9-10]> <prevouts>
     //
-    // Ensuring a single input is needed because a transaction could be made
-    // with multiple coins of the same value. The input script for each coin
-    // would validate the same outputs but only one coin would be split and
-    // all the others would add to fees.
+    // Ensuring a single script input is needed because a transaction could
+    // be made with multiple coins of the same value. The input script for
+    // each coin would validate the same outputs but only one coin would be
+    // split and all the others would be givne to miners.
     //
     // By matching the preimage outpoint with the first prevout provided as
-    // input we allow for more inputs that can add fees. This is important
-    // to make all coins potentially spendable because transactions will be
-    // bigger than 546 bytes.
+    // input we limit the number of scripts inputs while allowing for more
+    // inputs that can add fees. This is important to make all coins spendable
+    // because transactions will be bigger than 546 bytes.
     //
 
     pushNumberOp(36),
     OP_SPLIT,
     OP_DROP,
-    pushNumberOp(3),
-    OP_ROLL,
+    pushNumberOp(6),
+    OP_PICK,
     OP_EQUALVERIFY,
 
     //
+    // check outputs SHA256d
+    // <outputs> <sig,sigflags> <preimage[1,2,3,4,5,6,7]> <hashOutputs> ...
+    // ... <preimage[9-10]>
+    //
+
+    OP_OVER,
+    pushNumberOp(11),
+    OP_ROLL,
+    OP_DUP,
+    OP_HASH256,
+    OP_ROT,
+    OP_EQUALVERIFY,
+
+    //
+    // bring script and value to top to enable output verification
+    // <sig,sigflags> <preimage[1,2,3,4]> <size,scriptCode> <value as bin> ...
+    // ... <preimage[7,8,9-10]> <outputs>
+    //
+
+    pushNumberOp(5),
+    OP_PICK,
+    pushNumberOp(5),
+    OP_PICK,
+
+    //
     // check for input value overflow (5 bytes of more)
-    // <outputs> <size,script> <value as bin>
+    // ... <outputs> <size,scriptCode> <value as bin>
     //
     // Script numbers are signed and may require a leading 0 byte to mark
     // the number as positive when the most significant bit is set. But
-    // script math operatos only accept minimally encoded numbers that fit
+    // script math operations only accept minimally encoded numbers that fit
     // in 4 bytes. This means that shares can only be verified for values
     // no larger than 0x7fffffff (big-endian).
     //
     // To make all inputs spendable there are two paths. When the input
     // value is within range, the shares are computed as expected. But when
-    // the input value is out of range, only two outputs to the contract
-    // address are allowed and their values (plus the fee) must match the
-    // input value. This can be done because 64-bit additional can be
-    // emulated with lower-bit addition and carry over. To avoid issues
-    // with the leading zero, 24-bit addition is used.
+    // the input value is out of range, only two outputs, to the contract
+    // address, are allowed and their values (plus the fee) must match the
+    // input value. This can be done because 64-bit addition can be emulated
+    // with lower-bit addition and carry over. Fo this, 24-bit addition is
+    // used because any overflow will fit in 4 bytes.
     //
 
     OP_DUP,
@@ -287,15 +224,15 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
     OP_IF,
 
       //
-      // can only validate split, start by computing the contract script
-      // <outputs> <size,script> <value as bin>
+      // compute the contract output script
+      // ... <outputs> <size,scriptCode> <value as bin>
       //
 
       pushBytesOp(fromHex("17a914")), // PUSH(23), HASH160, PUSH(20)
       OP_ROT,
-      pushNumberOp(3),                // the number of bytes to encode the script size
+      pushNumberOp(3),                // assume length of compact size
       OP_SPLIT,
-      OP_NIP,                         // drop size byte
+      OP_NIP,
       OP_HASH160,
       pushBytesOp(fromHex("87")),     // OP_EQUAL
       OP_CAT,
@@ -303,32 +240,33 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
 
       //
       // validate output destinations, preserve output values
-      // <outputs> <value as bin> <contractscript>
+      // ... <outputs> <value as bin> <outputscript>
       //
 
       OP_ROT,
 
       pushNumberOp(8),
       OP_SPLIT,
-      pushNumberOp(24), // script must always be [0x17, <23 bytes for P2SH>]
+      pushNumberOp(24),
       OP_SPLIT,
       pushNumberOp(8),
       OP_SPLIT,
 
       OP_ROT,
 
-      // <value as bin> <contractscript> <value1 as bin> <value2 as bin> <script1> <script2>
+      // ... <value as bin> <outputscript> <value1 as bin> <value2 as bin> ...
+      // ... <script2> <script1>
 
       OP_DUP,
       pushNumberOp(5),
       OP_ROLL,
 
-      OP_EQUALVERIFY, // <script2> == <contractscript>
-      OP_EQUALVERIFY, // <script1> == <script2>
+      OP_EQUALVERIFY, // <script1> == <contractscript>
+      OP_EQUALVERIFY, // <script2> == <script1>
 
       //
-      // validate that output values plus fee equals input value
-      // <value as bin> <value1 as bin> <value2 as bin>
+      // validate that the output values plus fee equals input value
+      // ... <value as bin> <outputscript> <value1 as bin> <value2 as bin>
       //
 
       pushNumberOp(3),
@@ -400,22 +338,20 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
       OP_CAT,            // join bits 24 - 63
       OP_CAT,            // join bits 0 - 63
 
-      OP_EQUAL,
-
-      //
-      // end
-      // 1
-      //
-      // The result of OP_EQUAL determines the success of the script, that is,
-      // the transaction is finally valid if the sum the outputs and the fee
-      // produced the input value.
-      //
+      OP_EQUALVERIFY,
 
     OP_ELSE,
 
       //
+      // drop script code, not neded for output verification
+      // ... <outputs> <size,scriptCode> <value as bin>
+      //
+
+      OP_NIP,
+
+      //
       // can validate shares, start by taking fixed fee from value
-      // <outputs> <size,script> <value as bin>
+      // ... <outputs> <value as bin>
       //
 
       OP_BIN2NUM,
@@ -424,15 +360,17 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
 
       //
       // calculate 1/1000 unit from input value
-      // <outputs> <size,script> <outputvalue>
+      // ... <outputs> <value>
       //
 
       pushNumberOp(1000),
       OP_DIV,
 
       //
-      // check if unit is below the minimum for every share
-      // <outputs> <size,script> <unit>
+      // check if unit is below the minimum of all shares
+      // ... <outputs> <unit>
+      //
+      // This means that, for all shares, unit times share is smaler than 546.
       //
 
       OP_DUP,
@@ -441,33 +379,34 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
       OP_IF,
 
         //
-        // drop unit and script, check for a single OP_RETURN output
-        // <outputs> <size,script> <unit>
+        // drop unit, not longer needed for output verification
+        // ... <outputs> <unit>
         //
-        // The OP_RETURN is enforced because there's no way to respect the shares
-        // and any other split would be arbitrary. A future version may allow
-        // consolidation to the input/contract address.
-        //
-        OP_2DROP,
-        pushBytesOp(serializeOutputs([{ value: 0, script: SCRIPT_NOPAY }])),
-        OP_EQUAL,
+
+        OP_DROP,
 
         //
-        // end
-        // 1
+        // check for an empty OP_RETURN
+        // ... <outputs>
         //
-        // The result of OP_EQUAL determines the success of the script, that is,
-        // the transaction is finally valid if the there is an empty OP_RETURN.
+        // The OP_RETURN is enforced because there's no way to respect the
+        // shares and any other distribution would be arbitrary. A future
+        // version may allow consolidation to the contract address.
         //
+
+        OP_REVERSEBYTES,
+        OP_BIN2NUM,
+        pushBytesOp(fromHex("6a01")),
+        OP_EQUALVERIFY,
 
       OP_ELSE,
 
         //
-        // bring outputs to the top, to allow for dynamic number of shares
-        // <outputs> <size,script> <unit>
+        // bring outputs to the top, to allow a dynamic number of shares
+        // ... <outputs> <unit>
         //
 
-        OP_ROT
+        OP_SWAP
   ];
 
   // add repeatable logic for each party
@@ -477,34 +416,34 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
     const minUnit = minUnitForShare(party.share);
 
     appendOps(ops, [
+
         //
-        // check if party must be present
-        // <size,script> <unit> <outputs[i:]>
+        // check if party1 must be present
+        // ... <unit> <outputs[1-n]>
         //
 
-        pushNumberOp(1),
-        OP_PICK,
+        OP_OVER,
         pushNumberOp(minUnit),
         OP_GREATERTHANOREQUAL,
         OP_IF,
 
           //
-          // extract value and script (save remaining outputs)
-          // <size,script> <unit> <outputs[i:]>
+          // extract value and output script (save remaining outputs)
+          // ... <unit> <outputs[1-n]>
           //
 
-          pushNumberOp(8), // value
+          pushNumberOp(8),
           OP_SPLIT,
           pushNumberOp(1), // first byte is the var size, always minimally encoded (size <= 25)
           OP_SPLIT,
           OP_SWAP,
           OP_SPLIT,
-          OP_ROT,          // save tail for next iteration
+          OP_ROT,
           OP_ROT,
 
           //
-          // check script, which includes address
-          // <size,script> <unit> <outputs[i+1:]> <value1 as bin> <script1>
+          // check output script, which includes address
+          // ... <unit> <outputs[2-n]> <value1 as bin> <outputscript1>
           //
 
           pushBytesOp(outputScript.bytecode),
@@ -512,7 +451,7 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
 
           //
           // check that value/share == unit (the reverse of value = share * unit)
-          // <size,script> <unit> <outputs[i+1:]> <value1 as bin>
+          // ... <unit> <outputs[2-n]> <value1 as bin>
           //
 
           OP_BIN2NUM,
@@ -530,8 +469,8 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
   appendOps(ops, [
 
         //
-        // drop the 0x tail and unit
-        // <size,script> <unit> <outputs[n:]>
+        // ensure that there are not more outputs
+        // ... <unit> <outputs[3-n]>
         //
         // No extra outputs are allowed for safety and because the transaction
         // priority is relevant for the contract. By restricting outputs it's
@@ -542,31 +481,83 @@ export function createScript(prvKey: Uint8Array, fee: number, parties: Party[]) 
         //
 
         OP_1ADD, // only a 0x00 tail is a valid number
-        OP_ROT,
-        OP_ROT,
 
-        // 1 <size,script> <unit>
+        //
+        // clean stack by dropping verified tail and unit
+        // ... <unit> 1
+        //
 
         OP_2DROP,
-
-        //
-        // end
-        // 1
-        //
-        // The result of OP_1ADD ends up determining the success of the script.
-        // If there are more outputs, the op will fail and the script will not
-        // reach this point. If there are no more outputs then 0x will be
-        // interpreted as 0 and the op will produce the expected 1. The other
-        // elements are dropped because of the clean stack rule.
-        //
 
       OP_ENDIF,
 
     OP_ENDIF,
 
     //
+    // reconstruct the preimage from its parts
+    // <sig,sigflags> <preimage[1,2,3,4,5,6,7,8,9-10]>
+    //
+
+    OP_CAT,
+    OP_CAT,
+    OP_CAT,
+    OP_CAT,
+    OP_CAT,
+    OP_CAT,
+    OP_CAT,
+    OP_CAT,
+
+    //
+    // add validation public key
+    // <sig,sigflags> <preimage>
+    //
+
+    pushBytesOp(pubKey),
+
+    //
+    // check transaction signature
+    // <sig,sigflags> <preimage> <pubkey>
+    //
+
+    OP_3DUP,
+    OP_NIP,
+    OP_CHECKSIGVERIFY,
+
+    //
+    // prepare signature for prehash validation by dropping sighas byte
+    // <sig,sigflags> <preimage> <pubkey>
+    //
+
+    OP_ROT,
+    pushNumberOp(64),
+    OP_SPLIT,
+    OP_DROP,
+
+    //
+    // prepare preimage for validation by hashing once
+    // <preimage> <pubkey> <sig>
+    //
+
+    OP_ROT,
+    OP_SHA256,
+
+    //
+    // validate preimage hash
+    // <pubkey> <sig> <preimagehash>
+    //
+
+    OP_ROT,
+    OP_CHECKDATASIG, // does the second sha256 before checking
+
+    //
     // end
     // 1
+    //
+    // All the validations done on prevouts and outputs rests on the preimage
+    // being valid. That part is done by the OP_OP_CHECKDATASIG above, but
+    // the validation is only meaningful after the previous OP_CHECKSIGVERIFY
+    // with the same signature. That's what ensures that the preimage given as
+    // input is the actual preimage for the utxo being spent.
     //
 
   ]);

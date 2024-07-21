@@ -23,7 +23,7 @@ export interface Utxo {
 
 export function createTx(ecc: Ecc, prvKey: Uint8Array, utxo: Utxo, fee: number, parties: Party[]) {
   // produce contract script
-  const contract = createScript(prvKey, fee, parties);
+  const contract = createScript(ecc, prvKey, fee, parties);
 
   // create transaction with dynamic outputs based on value
   const tx = new Tx({
@@ -76,7 +76,15 @@ export function createTx(ecc: Ecc, prvKey: Uint8Array, utxo: Utxo, fee: number, 
     pushBytesOp(serializedPrevouts),
     pushBytesOp(serializedOutputs),
     pushBytesOp(signature),
-    pushBytesOp(inputPreimage.bytes),
+    pushBytesOp(inputPreimage.bytes.slice(0, 4)),
+    pushBytesOp(inputPreimage.bytes.slice(4, 36)),
+    pushBytesOp(inputPreimage.bytes.slice(36, 68)),
+    pushBytesOp(inputPreimage.bytes.slice(68, 104)),
+    pushBytesOp(inputPreimage.bytes.slice(104, -52)),
+    pushBytesOp(inputPreimage.bytes.slice(-52, -44)),
+    pushBytesOp(inputPreimage.bytes.slice(-44, -40)),
+    pushBytesOp(inputPreimage.bytes.slice(-40, -8)),
+    pushBytesOp(inputPreimage.bytes.slice(-8)),
     pushBytesOp(inputPreimage.redeemScript.bytecode),
   ]);
 

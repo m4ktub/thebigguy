@@ -1,12 +1,49 @@
 import * as utxolib from '@bitgo/utxo-lib';
 import '@jest/globals';
-import { OP_ADD, OP_DIV, OP_EQUAL, OP_EQUALVERIFY, OP_GREATERTHANOREQUAL, OP_HASH160, OP_IF, OP_LESSTHAN, OP_NIP, OP_SPLIT, OP_SUB, Script, fromHex, initWasm, pushBytesOp, shaRmd160, toHex } from 'ecash-lib';
-import { SCRIPT_NOPAY, createScript, minUnitForAllShares, minUnitForShare, quotient, type Party } from './script';
+import {
+  Ecc,
+  OP_ADD,
+  OP_BIN2NUM,
+  OP_DIV,
+  OP_EQUALVERIFY,
+  OP_GREATERTHANOREQUAL,
+  OP_HASH160,
+  OP_IF,
+  OP_LESSTHAN,
+  OP_NIP,
+  OP_REVERSEBYTES,
+  OP_SPLIT,
+  OP_SUB,
+  Script,
+  fromHex,
+  initWasm,
+  pushBytesOp,
+  shaRmd160,
+  toHex
+} from 'ecash-lib';
+import {
+  SCRIPT_NOPAY,
+  createScript,
+  minUnitForAllShares,
+  minUnitForShare,
+  quotient,
+  type Party
+} from './script';
 import { outputScriptForAddress, pushNumberOp, serializeOutputs } from './utils';
 
+//
+// initialize ECC
+//
+
+var ecc: Ecc;
+
 beforeAll(() => {
-  return initWasm();
+  return initWasm().then(() => ecc = new Ecc());
 });
+
+//
+// register tests
+//
 
 describe('constants', () => {
   test('SCRIPT_NOPAY', () => {
@@ -102,32 +139,33 @@ describe('createScript', () => {
 
   test('validate arguments', () => {
     // number of parties
-    expect(() => createScript(prvKey, 10000, parties())).toThrow();
-    expect(() => createScript(prvKey, 10000, parties(1000))).toThrow();
-    expect(() => createScript(prvKey, 10000, parties(500, 300, 100, 100))).toThrow();
-    expect(createScript(prvKey, 10000, parties(500, 500))).toBeInstanceOf(Script);
-    // fee too low
-    expect(() => createScript(prvKey, 1000, parties(500, 500))).toThrow();
-    expect(createScript(prvKey, 1200, parties(500, 500))).toBeInstanceOf(Script);
-    expect(() => createScript(prvKey, 1200, parties(400, 400, 300))).toThrow();
-    expect(createScript(prvKey, 1300, parties(400, 300, 300))).toBeInstanceOf(Script);
+    expect(() => createScript(ecc, prvKey, 10000, parties())).toThrow();
+    expect(() => createScript(ecc, prvKey, 10000, parties(1000))).toThrow();
+    expect(() => createScript(ecc, prvKey, 10000, parties(150, 150, 150, 150, 150, 150, 100))).toThrow();
+    expect(createScript(ecc, prvKey, 10000, parties(500, 500))).toBeInstanceOf(Script);
+    expect(createScript(ecc, prvKey, 10000, parties(170, 170, 170, 170, 170, 150))).toBeInstanceOf(Script);
+
     // fee too high
-    expect(() => createScript(prvKey, 2113929217 + 1, parties(500, 500))).toThrow();
+    expect(() => createScript(ecc, prvKey, 2113929217 + 1, parties(500, 500))).toThrow();
+
     // no floats on shares
-    expect(() => createScript(prvKey, 2000, parties(500.1, 499.9))).toThrow();
+    expect(() => createScript(ecc, prvKey, 2000, parties(500.1, 499.9))).toThrow();
+
     // shares between 1 and 999
-    expect(() => createScript(prvKey, 2000, parties(500, 500, 0))).toThrow();
-    expect(() => createScript(prvKey, 2000, parties(500, 501, -1))).toThrow();
+    expect(() => createScript(ecc, prvKey, 2000, parties(500, 500, 0))).toThrow();
+    expect(() => createScript(ecc, prvKey, 2000, parties(500, 501, -1))).toThrow();
+
     // valid shares add to 1000
-    expect(() => createScript(prvKey, 2000, parties(400, 400))).toThrow();
+    expect(() => createScript(ecc, prvKey, 2000, parties(400, 400))).toThrow();
+
     // private key must be valid
-    expect(() => createScript(new Uint8Array(32), 2000, parties(500, 500))).toThrow();
+    expect(() => createScript(ecc, new Uint8Array(32), 2000, parties(500, 500))).toThrow();
   });
 
   test('constants are present', () => {
     const fee = 12345;
     const tparties = parties(123, 877);
-    const script = createScript(prvKey, fee, tparties);
+    const script = createScript(ecc, prvKey, fee, tparties);
     const hex = toHex(script.bytecode);
 
     // public key to check signatures
@@ -135,15 +173,19 @@ describe('createScript', () => {
 
     // fee subtracted from input value, when distributing
     const feeSubHex = toHex(Script.fromOps([pushNumberOp(fee), OP_SUB]).bytecode);
+
     // fee added to output values, when splitting
     const feeAddHex = toHex(Script.fromOps([pushNumberOp(fee), OP_ADD]).bytecode);
 
     // check of smallest unit to choose between OP_RETURN or other outputs
     const smallestUnitHex = toHex(Script.fromOps([pushNumberOp(1), OP_LESSTHAN, OP_IF]).bytecode);
 
-    // check comparison of outputs with no pay script
+    // check comparison of outputs with no pay script, by treating the reverse as number
     const noPaySer = serializeOutputs([{ value: 0, script: SCRIPT_NOPAY }]);
-    const noPayOutputHex = toHex(Script.fromOps([pushBytesOp(noPaySer), OP_EQUAL]).bytecode);
+    const noPayAsNumSer = noPaySer.reverse().filter(v => v > 0);
+    const noPayOutputHex = toHex(Script.fromOps([
+      OP_REVERSEBYTES, OP_BIN2NUM, pushBytesOp(noPayAsNumSer), OP_EQUALVERIFY
+    ]).bytecode);
 
     // check if output is present, division of value by share, and correct output address
     const minUnit1Hex = toHex(Script.fromOps([pushNumberOp(5), OP_GREATERTHANOREQUAL, OP_IF]).bytecode);
@@ -172,13 +214,14 @@ describe('createScript', () => {
   });
 
   /**
-   * The script size is close to the var int threashold between 1 and 3 bytes.
+   * The script size is assumed in the script for simplicy but since the size
+   * is encoded in the compact size convention, it can be either 1 or 3 bytes.
    * Since the script needs to be hashed to calculate the output script and
    * validate outputs, it's important to check that the correct number of bytes
    * are split from the prefix before hashing.
    */
   test('varint script size', () => {
-    const script = createScript(prvKey, 2000, parties(900, 100));
+    const script = createScript(ecc, prvKey, 2000, parties(900, 100));
     const hex = toHex(script.bytecode);
 
     const varIntLength = script.bytecode.length <= 0xfc ? 1 : 3;
@@ -192,19 +235,25 @@ describe('createScript', () => {
     expect(hex.indexOf(splitHashHex)).not.toBe(-1);
   });
 
-  // added for release
+  /**
+   * Added for release v1.
+   *
+   * Once released, any error in this test means that an unintended change was
+   * done to the script. That is no acceptable because it would make previous
+   * contracts unusable by generating a new P2SH address for the same inputs.
+   */
   test('v1 stability', () => {
-    const script1 = createScript(prvKey, 2000, parties(900, 100));
+    const script1 = createScript(ecc, prvKey, 2000, parties(900, 100));
     const hash201 = toHex(shaRmd160(script1.bytecode));
-    expect(hash201).toEqual("7b6b3efdf656fe1b3cc4dceedb1ffeb06e508b82");
+    expect(hash201).toEqual("8b4c585d05e90b9663459b49c75dc063a4ef5f7b");
 
-    const script2 = createScript(prvKey, 2001, parties(900, 100));
+    const script2 = createScript(ecc, prvKey, 2001, parties(900, 100));
     const hash202 = toHex(shaRmd160(script2.bytecode));
-    expect(hash202).toEqual("a58c588337ad83a069d4441e20117c1ea3992548");
+    expect(hash202).toEqual("3805c831755d5da30ef0495332d666eec4810a10");
 
-    const script3 = createScript(prvKey, 2000, parties(899, 101));
+    const script3 = createScript(ecc, prvKey, 2000, parties(899, 101));
     const hash203 = toHex(shaRmd160(script3.bytecode));
-    expect(hash203).toEqual("8be0a5894cc2b93c3d89cb1edee6ea6fcd68d3a2");
+    expect(hash203).toEqual("0e7e2d1eb5c23803b74168b917ee9e2ac85a85af");
   });
 });
 
@@ -219,8 +268,11 @@ function parties(...shares: number[]): Party[] {
     "ecash:qq0exytv2e3ylet2yz5wxzhpwlftw05rgg4eu0yqwc",
     "ecash:qzv2r6z3d5qgxh9zdsnh2k59mlsa6lawlsh7fvxudj",
     "ecash:qru9mar7gxd26z5qzwqa0hk66cawu43ygv96x4x4vw",
-    "ecash:qztuj8cek66xwwuzfm4xgnf6z0kyk3pt0geaw0l36y"
+    "ecash:qztuj8cek66xwwuzfm4xgnf6z0kyk3pt0geaw0l36y",
+    "ecash:qpdy206vvlupz49nr2t0jhf2emau7xkk4usmdwht77"
   ];
 
-  return shares.map<Party>((share, i) => ({ address: addresses[i], share }));
+  return shares.map<Party>((share, i) => {
+    return { address: addresses[i], share };
+  });
 }

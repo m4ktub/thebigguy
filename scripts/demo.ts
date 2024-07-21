@@ -76,11 +76,11 @@ const signedTx = createTx(ecc, PRV_KEY, utxo, request.fee, [
 //
 // print details
 //
-// The transaction will have a spend script which is 4 pushes
+// The transaction will have a spend script which is 13 pushes
 // - serialized prevouts
 // - serialized outputs
 // - signature
-// - preimage of single input
+// - preimage for the input split into 9 parts (last two elements joined)
 // - script, as required for P2SH
 //
 const redeemScript = signedTx.inputs[0].script as xeclib.Script
@@ -89,7 +89,15 @@ const opsIter = redeemScript.ops();
 const prevouts = opsIter.next() as xeclib.PushOp;
 const outputs = opsIter.next() as xeclib.PushOp;
 const sig = opsIter.next() as xeclib.PushOp;
-const preimage = opsIter.next() as xeclib.PushOp;
+const preimage1 = opsIter.next() as xeclib.PushOp;
+const preimage2 = opsIter.next() as xeclib.PushOp;
+const preimage3 = opsIter.next() as xeclib.PushOp;
+const preimage4 = opsIter.next() as xeclib.PushOp;
+const preimage5 = opsIter.next() as xeclib.PushOp;
+const preimage6 = opsIter.next() as xeclib.PushOp;
+const preimage7 = opsIter.next() as xeclib.PushOp;
+const preimage8 = opsIter.next() as xeclib.PushOp;
+const preimage9 = opsIter.next() as xeclib.PushOp;
 const script = opsIter.next() as xeclib.PushOp;
 
 console.log("      tx:", signedTx.serSize(), xeclib.toHex(signedTx.ser()));
@@ -97,7 +105,15 @@ console.log();
 console.log("prevouts:", prevouts.data.length, xeclib.toHex(prevouts.data));
 console.log(" outputs:", outputs.data.length, xeclib.toHex(outputs.data));
 console.log("     sig:", sig.data.length, xeclib.toHex(sig.data));
-console.log("preimage:", preimage.data.length, xeclib.toHex(preimage.data));
+console.log("preimage:", preimage1.data.length, xeclib.toHex(preimage1.data));
+console.log("         ", preimage2.data.length, xeclib.toHex(preimage2.data));
+console.log("         ", preimage3.data.length, xeclib.toHex(preimage3.data));
+console.log("         ", preimage4.data.length, xeclib.toHex(preimage4.data));
+console.log("         ", preimage5.data.length, xeclib.toHex(preimage5.data));
+console.log("         ", preimage6.data.length, xeclib.toHex(preimage6.data));
+console.log("         ", preimage7.data.length, xeclib.toHex(preimage7.data));
+console.log("         ", preimage8.data.length, xeclib.toHex(preimage8.data));
+console.log("         ", preimage9.data.length, xeclib.toHex(preimage9.data));
 console.log();
 console.log(" address:", xecaddr.encode("ecash", "P2SH", xeclib.shaRmd160(script.data)))
 console.log("  script:", script.data.length, xeclib.toHex(script.data));

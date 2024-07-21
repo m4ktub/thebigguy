@@ -19,11 +19,13 @@ export interface P2SHResponse {
 }
 
 export default function p2sh(req: Request, res: Response) {
+    const ecc = new Ecc();
+
     // validate and extract parameters
     const { fee, parties } = queryContract(req);
 
     // build contract
-    const contract = createScript(PRV_KEY, fee, parties);
+    const contract = createScript(ecc, PRV_KEY, fee, parties);
     const contractHash = shaRmd160(contract.bytecode);
     const contractAddress = xecaddr.encode("ecash", "P2SH", contractHash);
 
@@ -34,7 +36,7 @@ export default function p2sh(req: Request, res: Response) {
     // calculate the value below which a 1 sat/byte fee cannot be achieved
     // the txid does not affect size and value could be any number below minValue
     const fakeUtxo = { txid: NULL_TXID, outIdx: 0, value: fee };
-    const fakeTx = createTx(new Ecc(), PRV_KEY, fakeUtxo, fee, parties);
+    const fakeTx = createTx(ecc, PRV_KEY, fakeUtxo, fee, parties);
     const dustValue = fakeTx.serSize();
 
     // send response

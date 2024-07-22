@@ -37,7 +37,9 @@
     "copy:https": "ts-node scripts/copy.ts etc/https dist/etc/https",
     "copy:frontend": "ts-node scripts/copy.ts src/frontend dist/src/frontend",
     "build": "npm run clean:dist && npm run build:backend && npm run build:frontend",
-    "test": "jest --workerThreads",
+    "test": "npm run test:src && npm run test:rpc",
+    "test:src": "jest --workerThreads",
+    "test:rpc": "ts-node scripts/testrpc.ts",
     "start": "node dist/src/server.js"
   }
 }

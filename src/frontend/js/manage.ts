@@ -46,7 +46,7 @@ function addOutputRows(options: PageOptions, data: P2SHResponse, utxos: Utxo[]) 
   // an usability point of view, it's better to ommit those than to constantly
   // present rows for which the user can do nothing.
   //
-  const filteredUtxos = utxos.filter(utxo => BigInt(utxo.value) < data.dustValue);
+  const filteredUtxos = utxos.filter(utxo => BigInt(utxo.value) >= data.dustValue);
 
   // find template row
   const tplName = filteredUtxos.length == 0 ? "empty" : "row";

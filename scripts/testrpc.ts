@@ -1,8 +1,8 @@
-import { Ecc, initWasm, Int, shaRmd160, toHex } from 'ecash-lib';
+import { Ecc, initWasm, type Int, shaRmd160, toHex } from 'ecash-lib';
 import * as xecaddr from 'ecashaddrjs';
 import { PRV_KEY } from '../src/backend/constants';
 import { createScript, quotient } from '../src/backend/contract/script';
-import { createTx, Utxo } from '../src/backend/contract/tx';
+import { createTx, type Utxo } from '../src/backend/contract/tx';
 
 //
 // gather environment

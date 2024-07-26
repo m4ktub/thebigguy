@@ -476,3 +476,53 @@ section#outputs table td button:disabled {
     padding: 8px 22px;
   }
 }
+
+/**
+ * faq
+ */
+
+section#faq {
+  background-color: #000c25;
+  margin-left: 60px;
+  margin-right: 60px;
+  margin-bottom: 60px;
+  padding-top: 20px;
+}
+
+section#faq h1 {
+  color: #00abe7;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+section#faq p {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding: 20px 20px 0px 20px;
+  border-left: 1px solid gray;
+  line-height: 1.5em;
+}
+
+section#faq p:last-child {
+  margin-bottom: 60px;
+  padding-bottom: 20px;
+}
+
+section#faq :target h1 {
+  color: #ff21d0;
+}
+
+section#faq h1 a {
+  text-decoration: none;
+  color: gray;
+  font-size: smaller;
+  visibility: hidden;
+}
+
+section#faq h1:hover a {
+  visibility: visible;
+}
+
+section#faq h1 a:hover {
+  color: white;
+}

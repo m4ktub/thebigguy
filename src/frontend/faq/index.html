@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A tool to help split amounts between parties on eCash">
+    <title>FAQ</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+  <body>
+    <header>
+      <h1>The Big Guy</h1>
+      <p>Ensuring everyone gets their share.</p>
+    </header>
+    <section id="prompt">
+      <h1>Frequently Asked Questions</h1>
+      <p class="tag">
+        Curious about how this works? Want to clarify a detail? The following are common questions and their answers regarding The Big Guy service.
+      </p>
+    </section>
+    <section id="faq">
+      <div class="qa" id="qa2">
+        <h1>Who controls the generated addresses and can spend funds sent there? <a href="#qa2">#</a></h1>
+        <p>
+          The service is not custodial and does not hold, or exclusively control, the funds
+          sent to each generated address. Anyone could spend those coins with the necessary
+          technical knowledge because the project is open source, and the required information
+          is publicly available.
+        </p>
+        <p>
+          The reason this is safe is because the script behind each generated address only 
+          allows for a single way of spending the funds. For each coin received, there's only
+          one way of spending it that will be accepted, make the transaction valid, and accepted
+          by the network. Either the funds remain unspent or are sent to one
+          of the parties.
+        </p>
+      </div>
+      <div class="qa" id="qa3">
+        <h1>How can I go back to a previously generated address after I close the browser? <a href="#qa3">#</a></h1>
+        <p>
+          If you select the same parties, shares, and fee you will get back to the same address.
+          These addresses are not generated randomly, like wallet addresses, and instead depend
+          exclusively on the mentioned parameters.
+        </p>
+      </div>
+      <div class="qa" id="qa4">
+        <h1>Is CashTab supported as a destination address? <a href="#qa4">#</a></h1>
+        <p>
+          Yes. The parties can be any valid eCash address from any wallet. There's no wallet
+          support needed for the distribution.
+        </p>
+      </div>
+      <div class="qa" id="qa5">
+        <h1>I've sent a small amount to test. Why are no outputs shown even after refreshing? <a href="#qa5">#</a></h1>
+        <p>
+          If the value is too low to ensure the minimum network fee (1 sat / byte) then the coin
+          is not shown in the outputs because spending it is not yet supported. Any value above
+          the chosen fee will already appear in the table.
+        </p>
+      </div>
+      <div class="qa" id="qa6">
+        <h1>Can the parties, shares, or fee be changed, even if it only affects new payments? <a href="#qa6">#</a></h1>
+        <p>
+          There's no way to change any of the parties, shares, or even the fee without changing
+          the address. In other words, the generated address depends on these parameters.
+        </p>
+        <p>
+          This happens because the address is not something stored by the service but represents
+          a script that will be validated by the eCash network. Since the script includes these
+          parameters, any change to them will require a different address to be used.
+        </p>
+      </div>
+      <div class="qa" id="qa7">
+        <h1>Can I trust this service with large amounts? <a href="#qa7">#</a></h1>
+        <p>
+          The underlying script has not been independently audited but, before deploying changes,
+          the service performs several tests with values that go from tens of XEC to tens of 
+          millions of XEC. These unit tests but tests using the latest node versions and consensus
+          rules providing assurance that all values are spendable according to the rules and not
+          lost to an error in the script logic. 
+        </p>
+        <p>
+          As an additional measure, once a script has been tested and deployed, it's never changed.
+          Instead, future changes and potential optimizations are provided as a new version which
+          can be ignored by users that prefer to keep use the previous version.
+        </p>
+      </div>
+      <div class="qa" id="qa8">
+        <h1>Why are the distribution transactions paying more fees than what was chosen? <a href="#qa8">#</a></h1>
+        <p>
+          The chosen fee is the minimum fee that will be paid to the network. But the effective
+          fee can be larger due to rounding in the division of funds between shares, and because
+          some shares can become too small to be distributed.
+        </p>
+        <p>
+          Before calculating the share for each party, the value is split into portions of 10 XEC. 
+          The remainder, up to 9.99 XEC will add up to fees and not distributed. If a share is
+          smaller than 6 XEC then it will also be added to fees because the network imposes a
+          limit on how small a coin can be.
+        </p>
+      </div>
+      <div class="qa" id="qa9">
+        <h1>Why are some coins only distributed to one of the parties? <a href="#qa9">#</a></h1>
+        <p>
+          The eCash network imposes a limit on how small a coin can be. This means that if someone
+          tries to transfer to an address a value that is too small then the network will reject
+          the transaction. Currently that value is 5.46 XEC. If the value, after taking the initial 
+          fee, is only 40 XEC and you have share of 10%, then you won't receive any funds. Instead,
+          your portion will go to miners as fees.
+        </p>
+      </div>
+      <div class="qa" id="qa10">
+        <h1>I've received millions of XEC, clicked to split it but no XEc was sent to my final address? <a href="#qa10">#</a></h1>
+        <p>
+          For values above 21 million XEC, the amount cannot be distributed directly to parties.
+          Instead of distributing, the button splits that amount in half and sends both halves back
+          to the same address. Instead of receiving funds you will see both coins appear in the
+          list of output coins. When the value is 21 M of lower, then distribution will occur.
+        </p>
+      </div>
+    </section>
+  </body>
+</html>

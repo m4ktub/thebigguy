@@ -526,3 +526,45 @@ section#faq h1:hover a {
 section#faq h1 a:hover {
   color: white;
 }
+
+/**
+ * about
+ */
+
+ section#about {
+  background-color: #000c25;
+  margin-left: 60px;
+  margin-right: 60px;
+  margin-bottom: 60px;
+  padding-top: 20px;
+}
+
+section#contribute {
+  background-color: #000c25;
+  margin-left: 60px;
+  margin-right: 60px;
+  margin-bottom: 60px;
+}
+
+section#contribute p {
+  position: relative;
+  padding-left: 40px;
+}
+
+section#contribute  a {
+  color: #00abe7;
+  text-decoration: none;
+}
+
+section#contribute a:hover {
+  text-decoration: underline;
+}
+
+section#contribute a.github.logo {
+  position: absolute;
+  left: 0px;
+}
+
+section#contribute a.github img {
+  width: 32px;
+}

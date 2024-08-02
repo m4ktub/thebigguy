@@ -63,6 +63,40 @@ button[type='reset']:hover {
   cursor: pointer;
 }
 
+nav {
+  position: absolute;
+  top: 20px;
+  right: 60px;
+}
+
+nav a {
+  color: #00abe7;
+  text-decoration: none;
+  margin-left: 20px;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 650px) {
+  nav {
+    position: absolute;
+    top: 80px;
+    left: 60px;
+    right: unset;
+  }
+
+  nav a {
+    margin-left: unset;
+  }
+
+  nav a:not(:last-child):after {
+    content: " | ";
+    color: white;
+  }
+}
+
 /**
  * tooltips
  */

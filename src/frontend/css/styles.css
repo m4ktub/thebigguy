@@ -79,6 +79,22 @@ nav a:hover {
   text-decoration: underline;
 }
 
+footer {
+  border-top: 1px solid #1a253b;
+  text-align: center;
+  font-size: small;
+  padding-bottom: 40px;
+}
+
+footer a {
+  color: #00abe7;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
 @media screen and (max-width: 650px) {
   nav {
     position: absolute;

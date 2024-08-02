@@ -117,6 +117,15 @@ footer a:hover {
  * tooltips
  */
 
+.info .icon {
+  background-image: url('/img/info-icon.png');
+  background-repeat: no-repeat;
+  display: inline-block;
+  width: 16px;
+  background-size: 16px 16px;
+  filter: brightness(3);
+}
+
 .info .note {
   display: none;
   position: absolute;

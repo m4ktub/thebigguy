@@ -4,6 +4,7 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import path from 'path';
+import logger from './backend/logging';
 import p2sh from './backend/p2sh';
 import status from './backend/status';
 import tx from './backend/tx';
@@ -15,6 +16,12 @@ import redirect from './redirect';
 //
 
 const app = express();
+
+//
+// register logging
+//
+
+app.use(logger);
 
 //
 // serve static website

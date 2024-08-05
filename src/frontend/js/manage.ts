@@ -1,7 +1,7 @@
 import jquery from 'jquery';
 import { type P2SHResponse } from '../../backend/p2sh';
 import { type TxResponse } from '../../backend/tx';
-import { type Utxo, scriptUtxos, broadcastTx } from './chronik';
+import { type Utxo, broadcastTx, streamUtxos } from './chronik';
 import { addr2html, blockHeight2html, bool2html, outpoint2html, share2html, txid2html, xec2html } from './format';
 
 interface PageOptions {
@@ -28,45 +28,7 @@ export function load(options: PageOptions) {
     .then(res => res.json() as Promise<P2SHResponse>)
     .then(data => updateDetails(options, data))
     .then(data => loadUtxos(options, data))
-    .then(data => addOutputRows(options, data.p2sh, data.utxos));
-}
-
-function addOutputRows(options: PageOptions, data: P2SHResponse, utxos: Utxo[]) {
-  // find table
-  const table = jquery(options.outputs.table);
-  const tbody = table.find("tbody");
-
-  // remove existing rows
-  tbody.find("tr").remove();
-
-  // filter out dust utxos
-  //
-  // In this context, dust utxos are those that can't be spend with a fee of at
-  // least 1 sat/byte because the tx size will be bigger than the value. From
-  // an usability point of view, it's better to ommit those than to constantly
-  // present rows for which the user can do nothing.
-  //
-  const filteredUtxos = utxos.filter(utxo => BigInt(utxo.value) >= data.dustValue);
-
-  // find template row
-  const tplName = filteredUtxos.length == 0 ? "empty" : "row";
-  const tplNode = jquery(options.outputs.tpl[tplName]).get(0);
-  if (!(tplNode instanceof HTMLTemplateElement)) {
-    return;
-  }
-
-  // add rows to table
-  if (filteredUtxos.length == 0) {
-    jquery(tplNode.content.cloneNode(true)).appendTo(tbody);
-  }
-  else {
-    filteredUtxos.forEach(utxo => {
-      const newRow = jquery(tplNode.content.cloneNode(true));
-      updateRow(options, data, utxo, newRow);
-
-      newRow.appendTo(tbody);
-    });
-  }
+    .then(data => maybeAddEmptyRow(options, data));
 }
 
 function updateDetails(options: PageOptions, data: P2SHResponse) {
@@ -87,14 +49,101 @@ function updateDetails(options: PageOptions, data: P2SHResponse) {
   return data;
 }
 
-function loadUtxos(_options: PageOptions, data: P2SHResponse) {
-  return scriptUtxos(data.hash)
-    .then(scriptUtxos => {
-      return {
-        utxos: scriptUtxos.flatMap(su => su.utxos),
-        p2sh: data
-      };
+async function loadUtxos(options: PageOptions, data: P2SHResponse) {
+  // find table and body
+  const table = jquery(options.outputs.table);
+  const tbody = table.find("tbody");
+
+  // find row template
+  const rowSelector = options.outputs.tpl["row"];
+  const rowTemplate = jquery(rowSelector);
+
+  // keep count, to clear table on first utxo
+  let count = 0;
+
+  // start stream of utxos
+  const streaming = streamUtxos(data.hash, data.dustValue, utxo => {
+    // update count
+    count++;
+
+    // on first utxo, clear existing rows
+    if (count == 1) {
+      tbody.find("tr").remove();
+    }
+
+    // add or update row for utxo
+    const rowId = `utxo-${utxo.outpoint.txid}-${utxo.outpoint.outIdx}`;
+    addRowTemplate(tbody, rowTemplate, rowId, row => {
+      updateRow(options, data, utxo, row);
     });
+  });
+
+  // after resolving the initial utxos, make sure we continue with data
+  return streaming.then(() => data);
+}
+
+function maybeAddEmptyRow(options: PageOptions, _data: P2SHResponse) {
+  // find table and body
+  const table = jquery(options.outputs.table);
+  const tbody = table.find("tbody");
+
+  // check for added utxo rows
+  const hasOutpoints = tbody.find("tr[data-id]:first").length > 0;
+  if (hasOutpoints) {
+    // skip any changes
+    return;
+  }
+
+  // remove any existing placeholder rows
+  tbody.find("tr").remove();
+
+  // add the empty template
+  const emptySelector = options.outputs.tpl["empty"];
+  addRowTemplate(tbody, jquery(emptySelector));
+}
+
+function addRowTemplate(
+  tbody: JQuery<HTMLTableSectionElement>,
+  rowTemplate: JQuery<HTMLElement>,
+  rowId?: string,
+  updater?: (row: JQuery<Node>) => void
+) {
+  let row: JQuery<Node> | undefined = undefined;
+  let newRow = false;
+
+  // if row id is provided, try to find existing
+  if (rowId) {
+    row = tbody.find(`tr[data-id='${rowId}']`);
+  }
+
+  // if not found, create new row from template
+  if (!row?.length) {
+    // check template node is valid
+    const tplNode = rowTemplate.get(0);
+    if (!(tplNode instanceof HTMLTemplateElement)) {
+      throw new Error("Row template is not a template element");
+    }
+
+    // clone template
+    row = jquery(tplNode.content.cloneNode(true));
+    newRow = true;
+
+    // set row id, if provided
+    if (rowId) {
+      // find the row element because the clone contains fragments
+      row.find("tr").attr("data-id", rowId);
+    }
+  }
+
+  // execute row update function, if provided
+  if (updater) {
+    updater(row);
+  }
+
+  // add row to table, if new
+  if (newRow) {
+    row.appendTo(tbody);
+  }
 }
 
 function updateRow(_options: PageOptions, data: P2SHResponse, utxo: Utxo, row: JQuery<Node>) {

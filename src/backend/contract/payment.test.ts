@@ -3,7 +3,6 @@ import '@jest/globals';
 import { Ecc, Script, TxOutput, initWasm, shaRmd160 } from 'ecash-lib';
 import { createOutputs } from './payment';
 import { SCRIPT_NOPAY, createScript, type Party } from './script';
-import { outputScriptForAddress } from './utils';
 
 //
 // initialize ECC
@@ -56,12 +55,12 @@ describe('payments', () => {
 
     expectOutputs(createOutputs(3000, fee, contract, parties), {
       value: 900,
-      script: outputScriptForAddress(parties[0].address)
+      script: Script.fromAddress(parties[0].address)
     });
 
     expectOutputs(createOutputs(7999, fee, contract, parties), {
       value: 4500,
-      script: outputScriptForAddress(parties[0].address)
+      script: Script.fromAddress(parties[0].address)
     });
   });
 
@@ -71,13 +70,13 @@ describe('payments', () => {
     const contract = createScript(ecc, prvKey, fee, parties);
 
     expectOutputs(createOutputs(8000, fee, contract, parties),
-      { value: 5400, script: outputScriptForAddress(parties[0].address) },
-      { value:  600, script: outputScriptForAddress(parties[1].address) }
+      { value: 5400, script: Script.fromAddress(parties[0].address) },
+      { value:  600, script: Script.fromAddress(parties[1].address) }
     );
 
     expectOutputs(createOutputs(2147483647, fee, contract, parties),
-      { value: 1932732900, script: outputScriptForAddress(parties[0].address) },
-      { value:  214748100, script: outputScriptForAddress(parties[1].address) }
+      { value: 1932732900, script: Script.fromAddress(parties[0].address) },
+      { value:  214748100, script: Script.fromAddress(parties[1].address) }
     );
   });
 
@@ -87,8 +86,8 @@ describe('payments', () => {
     const contract = createScript(ecc, prvKey, fee, parties);
 
     expectOutputs(createOutputs(5999, fee, contract, parties),
-      { value: 2454, script: outputScriptForAddress(parties[0].address) },
-      { value:  546, script: outputScriptForAddress(parties[1].address) }
+      { value: 2454, script: Script.fromAddress(parties[0].address) },
+      { value:  546, script: Script.fromAddress(parties[1].address) }
     );
   });
 

@@ -1,6 +1,5 @@
 import {
   OP_0,
-  Script,
   WriterBytes,
   WriterLength,
   pushBytesOp,
@@ -10,19 +9,6 @@ import {
   type TxOutput,
   type Writer
 } from 'ecash-lib';
-import * as xecaddr from 'ecashaddrjs';
-
-export function outputScriptForAddress(address: string): Script {
-  const decodedAddress = xecaddr.decode(address, false);
-  const hash160 = decodedAddress.hash as Uint8Array;
-
-  switch (decodedAddress.type) {
-    case 'P2PKH': return Script.p2pkh(hash160);
-    case 'P2SH': return Script.p2sh(hash160);
-    default:
-      throw new Error(`Unexpected address type ${decodedAddress.type} from ecashaddrjs`);
-  }
-}
 
 function serializeValues<T>(data: T[], writer: (v: T, w: Writer) => void) {
   const lengthWriter = new WriterLength();

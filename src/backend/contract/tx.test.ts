@@ -3,7 +3,6 @@ import '@jest/globals';
 import { Ecc, Int, Script, TxOutput, initWasm, shaRmd160, isPushOp, toHex, sha256d } from 'ecash-lib';
 import { createTx } from './tx';
 import { Party, SCRIPT_NOPAY, createScript } from './script';
-import { outputScriptForAddress } from './utils';
 
 //
 // initialize ECC
@@ -40,7 +39,7 @@ describe('createTx', () => {
     const tx = createTx(ecc, prvKey, utxo(7999), fee, parties);
     expectOutputs(tx.outputs, {
       value: 4500,
-      script: outputScriptForAddress(parties[0].address)
+      script: Script.fromAddress(parties[0].address)
     });
   });
 
@@ -49,8 +48,8 @@ describe('createTx', () => {
     const parties = shares(900, 100);
     const tx = createTx(ecc, prvKey, utxo(8000), fee, parties);
     expectOutputs(tx.outputs,
-      { value: 5400, script: outputScriptForAddress(parties[0].address) },
-      { value:  600, script: outputScriptForAddress(parties[1].address) }
+      { value: 5400, script: Script.fromAddress(parties[0].address) },
+      { value:  600, script: Script.fromAddress(parties[1].address) }
     );
   });
 
@@ -59,8 +58,8 @@ describe('createTx', () => {
     const parties = shares(900, 100);
     const tx = createTx(ecc, prvKey, utxo(8000), fee, parties);
     expectOutputs(tx.outputs,
-      { value: 5400, script: outputScriptForAddress(parties[0].address) },
-      { value:  600, script: outputScriptForAddress(parties[1].address) }
+      { value: 5400, script: Script.fromAddress(parties[0].address) },
+      { value:  600, script: Script.fromAddress(parties[1].address) }
     );
   });
 

@@ -29,7 +29,7 @@ import {
   quotient,
   type Party
 } from './script';
-import { outputScriptForAddress, pushNumberOp, serializeOutputs } from './utils';
+import { pushNumberOp, serializeOutputs } from './utils';
 
 //
 // initialize ECC
@@ -190,13 +190,13 @@ describe('createScript', () => {
     // check if output is present, division of value by share, and correct output address
     const minUnit1Hex = toHex(Script.fromOps([pushNumberOp(5), OP_GREATERTHANOREQUAL, OP_IF]).bytecode);
     const share1Hex = toHex(Script.fromOps([pushNumberOp(tparties[0].share), OP_DIV]).bytecode);
-    const address1Bytecode = outputScriptForAddress(tparties[0].address).bytecode;
+    const address1Bytecode = Script.fromAddress(tparties[0].address).bytecode;
     const address1Hex = toHex(Script.fromOps([pushBytesOp(address1Bytecode), OP_EQUALVERIFY]).bytecode);
 
     // check if output is present, division of value by share, and correct output address
     const minUnit2Hex = toHex(Script.fromOps([pushNumberOp(1), OP_GREATERTHANOREQUAL, OP_IF]).bytecode);
     const share2Hex = toHex(Script.fromOps([pushNumberOp(tparties[1].share), OP_DIV]).bytecode);
-    const address2Bytecode = outputScriptForAddress(tparties[1].address).bytecode;
+    const address2Bytecode = Script.fromAddress(tparties[1].address).bytecode;
     const address2Hex = toHex(Script.fromOps([pushBytesOp(address2Bytecode), OP_EQUALVERIFY]).bytecode);
 
     // make sure all excerpts are present

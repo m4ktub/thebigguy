@@ -40,7 +40,7 @@ import {
   pushBytesOp
 } from 'ecash-lib';
 import * as xecaddr from 'ecashaddrjs';
-import { outputScriptForAddress, pushNumberOp } from './utils';
+import { pushNumberOp } from './utils';
 
 //
 // constants
@@ -412,7 +412,7 @@ export function createScript(ecc: Ecc, prvKey: Uint8Array, fee: number, parties:
   // add repeatable logic for each party
   for (let i = 0; i < parties.length; i++) {
     const party = parties[i];
-    const outputScript = outputScriptForAddress(party.address);
+    const outputScript = Script.fromAddress(party.address);
     const minUnit = minUnitForShare(party.share);
 
     appendOps(ops, [

@@ -1,6 +1,5 @@
 import { Int, Script, TxOutput, shaRmd160 } from "ecash-lib";
 import { SCRIPT_NOPAY, quotient, type Party } from "./script";
-import { outputScriptForAddress } from "./utils";
 
 export function createOutputs(value: Int, fee: number, contract: Script, parties: Party[]): TxOutput[] {
   const inputValue = BigInt(value);
@@ -41,7 +40,7 @@ export function createOutputs(value: Int, fee: number, contract: Script, parties
 
       outputs.push({
         value: partyValue,
-        script: outputScriptForAddress(party.address)
+        script: Script.fromAddress(party.address)
       });
     }
 

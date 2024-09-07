@@ -1,27 +1,6 @@
 import '@jest/globals';
 import { toHex, Script, OP_RETURN, fromHex } from 'ecash-lib';
-import { outputScriptForAddress, pushNumberOp, serializeOutputs, serializePrevouts } from './utils';
-
-describe('outputScriptForAddress', () => {
-  test('p2pkh', () => {
-    const addr1 = "ecash:qq28cqs6dx23qh4qucnk9v3l2jt4yr242cxqqnw9kc";
-    const addr2 = "etoken:qq28cqs6dx23qh4qucnk9v3l2jt4yr242cg7f3czj0";
-    expect(toHex(outputScriptForAddress(addr1).bytecode)).toEqual("76a914147c021a6995105ea0e62762b23f5497520d555688ac");
-    expect(toHex(outputScriptForAddress(addr2).bytecode)).toEqual("76a914147c021a6995105ea0e62762b23f5497520d555688ac");
-  });
-
-  test('p2sh', () => {
-    const addr1 = "ecash:prfhcnyqnl5cgrnmlfmms675w93ld7mvvqd0y8lz07";
-    const addr2 = "etoken:prfhcnyqnl5cgrnmlfmms675w93ld7mvvqr3d9f9tf";
-    expect(toHex(outputScriptForAddress(addr1).bytecode)).toEqual("a914d37c4c809fe9840e7bfa77b86bd47163f6fb6c6087");
-    expect(toHex(outputScriptForAddress(addr2).bytecode)).toEqual("a914d37c4c809fe9840e7bfa77b86bd47163f6fb6c6087");
-  });
-
-  test('invalid fails', () => {
-    const addr = "ecash:qr0";
-    expect(() => outputScriptForAddress(addr)).toThrow();
-  });
-});
+import { pushNumberOp, serializeOutputs, serializePrevouts } from './utils';
 
 describe('serializePrevouts', () => {
   test('demo', () => {

@@ -24,7 +24,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "chronik-client": "^1.0.0",
+    "chronik-client": "^0.29.0",
     "ecash-lib": "^0.2.0",
     "ecashaddrjs": "^1.5.6",
     "express": "^4.19.2",

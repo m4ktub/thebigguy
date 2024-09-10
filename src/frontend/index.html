@@ -48,6 +48,12 @@
           <input id="share2" type="number" name="share2" step="1" min="1" max="999" value="100" required />
           <span class="validation"></span>
         </p>
+        <p class="commission omitted">
+          <label for="address0">Comission:</label>
+          <input id="address0" type="text" name="address0" value="" disabled />
+          <label for="share0">Share:</label>
+          <input id="share0" type="text" name="share0" value="0" disabled />
+        </p>
         <p>
           <label for="fee">Fee:</label>
           <select id="fee" name="fee">
@@ -78,10 +84,10 @@
     <script src="/js/bundle.js"></script>
     <script>
       tbg.examples.rotate("#prompt .example", "#fee", 21);
-      tbg.inputs.mirrorShares("#share1", "#share2");
+      tbg.inputs.mirrorShares("#share0", "#builder input[type='number']");
       tbg.inputs.validateForm({
-        addresses: [ "#address1", "#address2" ],
-        shares: [ "#share1", "#share2" ],
+        addresses: "#builder input[type='text'][required]",
+        shares: "#builder input[type='number'][required]",
         fee: "#fee"
       });
     </script>

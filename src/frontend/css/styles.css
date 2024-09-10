@@ -275,6 +275,16 @@ section#builder form p:last-child {
   padding-left: 145px;
 }
 
+section#builder form p.commission.omitted {
+  display: none;
+}
+
+section#builder form p.commission input {
+  border: 1px solid rgba(0, 0, 0, 0);
+  color: white;
+  background-color: rgba(0, 0, 0, 0);
+}
+
 /**
  * manage
  */

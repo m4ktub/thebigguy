@@ -1,27 +1,46 @@
 import jquery from 'jquery';
 import * as xecaddr from 'ecashaddrjs';
 
-export function mirrorShares(selector1: string, selector2: string) {
-  const share1 = jquery<HTMLInputElement>(selector1);
-  const share2 = jquery<HTMLInputElement>(selector2);
-
-  const mirrorValues = (from: JQuery<HTMLInputElement>, to: JQuery<HTMLInputElement>) => {
-    const el = from.get(0);
-    if (!el) {
-      return;
-    }
-
-    let value = Math.max(1, Math.min(el.valueAsNumber, 999));
-    from.val(value);
-    to.val(1000 - value);
-  };
-
-  share1.on('change', () => mirrorValues(share1, share2));
-  share2.on('change', () => mirrorValues(share2, share1));
+function boundShare(reserved: number, value: number) {
+  return Math.max(1, Math.min(value, 1000 - reserved));
 }
 
-export function validateAddress(inputSelector: string) {
-  const input = jquery(inputSelector);
+export function mirrorShares(commissionShareSelector: string, allSharesSelector: string) {
+  const commission = jquery<HTMLInputElement>(commissionShareSelector);
+  const allShares = jquery<HTMLInputElement>(allSharesSelector);
+
+  const mirrorValues = (source: HTMLInputElement) => {
+    // get comission vlaue
+    let commissionValue = 0;
+    const commissionEl = commission.get(0);
+    if (commissionEl) {
+      commissionValue = commissionEl.valueAsNumber;
+    }
+
+    // get and adjust source value
+    let value = boundShare(commissionValue + allShares.length - 2, source.valueAsNumber);
+    jquery(source).val(value);
+
+    // adjust value of all other shares
+    const otherShares = allShares.get().filter(share => share != source && share != commissionEl);
+    otherShares.forEach((other, i) => {
+      const last = i == otherShares.length - 1;
+      if (last) {
+        jquery(other).val(1000 - value - commissionValue);
+      } else {
+        const otherValue = boundShare(commissionValue + value + otherShares.length - i - 1, other.valueAsNumber);
+        jquery(other).val(otherValue);
+        value += otherValue;
+      }
+    });
+  };
+
+  // bind change on all shares
+  allShares.on('change', (event) => mirrorValues(event.target));
+}
+
+function validateAddressInput(inputEl: HTMLElement) {
+  const input = jquery(inputEl);
   const status = input.nextAll(".validation");
 
   const validate = () => {
@@ -45,20 +64,23 @@ export function validateAddress(inputSelector: string) {
 }
 
 interface ValidateFormOptions {
-  addresses: string[],
-  shares: string[],
+  addresses: string,
+  shares: string,
   fee: string
 }
 
 export function validateForm(controls: ValidateFormOptions) {
   // add validation to addresses
-  controls.addresses.forEach(validateAddress);
+  jquery(controls.addresses).get().forEach(validateAddressInput);
 
   // include validation of others in the submission itself
   jquery(controls.fee).parents("form").on("submit", event => {
-    const validAddresses = controls.addresses.every(selector => jquery(selector).hasClass("valid"));
-    const validShares = controls.shares.every(selector => jquery(selector).val() !== "");
-    const validFee = Number(jquery(controls.fee).val()) >= 1007;
+    const addresses = jquery(controls.addresses).get()
+    const shares = jquery(controls.shares).get();
+
+    const validAddresses = addresses.every(selector => jquery(selector).hasClass("valid"));
+    const validShares = shares.every(selector => jquery(selector).val() !== "");
+    const validFee = Number(jquery(controls.fee).val()) >= 1250;
 
     const valid = validAddresses && validShares && validFee;
     if (valid) {

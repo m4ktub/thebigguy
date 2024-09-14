@@ -48,12 +48,6 @@
           <input id="share2" type="number" name="share2" step="1" min="1" max="999" value="100" required />
           <span class="validation"></span>
         </p>
-        <p class="commission omitted">
-          <label for="address0">Comission:</label>
-          <input id="address0" type="text" name="address0" value="" disabled />
-          <label for="share0">Share:</label>
-          <input id="share0" type="text" name="share0" value="0" disabled />
-        </p>
         <p>
           <label for="fee">Fee:</label>
           <select id="fee" name="fee">
@@ -66,6 +60,30 @@
             <span class="note">A minimum fee must be deducted from the input value, before
               splitting. Low means around 12 XEC, high around 50 XEC, and priority is 100 XEC.</span>
           </span>
+        </p>
+        <p>
+          <label>Features:</label>
+          <input id="enablestore" type="checkbox" name="enable" value="store">
+          <label for="enablestore" class="extended">Prettier management address</label>
+          <span class="info"><span class="icon">&nbsp;</span>
+            <span class="note">The generated address is stored by the service providing a 
+              shorter address for the management page.</span>
+          </span>
+        </p>
+        <p class="joined">
+          <label class="placeholder"></label>
+          <input id="enableautospend" type="checkbox" name="enable" value="autospend">
+          <label for="enableautospend" class="extended">Process transactions automatically</label>
+          <span class="info"><span class="icon">&nbsp;</span>
+          <span class="note">The service will monitor transactions and automatically
+            distribute any received XEC. The address must be stored for this.</span>
+          </span>
+        </p>
+        <p class="commission omitted">
+          <label for="address0">Comission:</label>
+          <input id="address0" type="text" name="address0" value="" disabled />
+          <label for="share0">Share:</label>
+          <input id="share0" type="text" name="share0" value="0" disabled />
         </p>
         <p>
           <button type="submit">Manage</button>
@@ -88,7 +106,20 @@
       tbg.inputs.validateForm({
         addresses: "#builder input[type='text'][required]",
         shares: "#builder input[type='number'][required]",
-        fee: "#fee"
+        fee: "#fee",
+        commission: {
+          address: "#address0",
+          share: "#share0"
+        }
+      });
+      tbg.inputs.features({
+        commission: {
+          omitted: "#builder form p.commission",
+          address: "#address0",
+          share: "#share0"
+        },
+        store: "#enablestore",
+        autospend: "#enableautospend" 
       });
     </script>
   </body>

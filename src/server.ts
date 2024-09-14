@@ -5,13 +5,14 @@ import http from 'http';
 import https from 'https';
 import { type AddressInfo } from 'net';
 import path from 'path';
+import * as database from './backend/database';
+import features from './backend/features';
 import logger from './backend/logging';
 import p2sh from './backend/p2sh';
 import status from './backend/status';
 import tx from './backend/tx';
 import customErrorHandler from './errors';
 import redirect from './redirect';
-import * as database from './backend/database';
 
 //
 // create express app
@@ -37,6 +38,7 @@ app.use(staticHandler);
 //
 
 app.get('/api/status', status);
+app.get('/api/features', features);
 app.get('/api/p2sh', p2sh);
 app.get('/api/tx', tx);
 

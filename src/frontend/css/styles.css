@@ -134,6 +134,7 @@ footer a:hover {
   margin-left: 8px;
   background: #000c25;
   border: 1px solid gray;
+  z-index: 1;
 }
 
 .info:hover .note {
@@ -280,9 +281,40 @@ section#builder form p.commission.omitted {
 }
 
 section#builder form p.commission input {
-  border: 1px solid rgba(0, 0, 0, 0);
   color: white;
+  border: 1px solid #ff21d0;
   background-color: rgba(0, 0, 0, 0);
+}
+
+section#builder form p.commission input[type='text']:last-child {
+  width: 55px;
+  padding-right: 0px;
+}
+
+section#builder form label.extended {
+  width: auto;
+  margin-right: auto;
+}
+
+@media screen and (max-width: 800px) {
+  section#builder form p label.extended {
+    position: relative;
+    margin-top: 24px;
+  }
+
+  section#builder form p.joined label {
+    margin-top: auto;
+  }
+
+  section#builder form p.joined input {
+    margin-top: auto;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  section#builder form p label.extended {
+    font-size: small;
+  }
 }
 
 /**
@@ -509,7 +541,6 @@ section#outputs table td button:disabled {
     overflow: hidden;
     text-overflow: ellipsis;
   }
-
 }
 
 @media screen and (max-width: 650px) {

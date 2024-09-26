@@ -32,8 +32,8 @@ const format = file ? 'combined' : 'tiny';
 if (!file) {
   options.skip = (_req, _res) => {
     const url = _req.url || "/";
-    // skip static resources
-    return url.indexOf("?") < 0;
+    // skip static resources (those that do not match prefixes)
+    return !['/h/', '/manage', '/api/'].some(path => url.startsWith(path));
   };
 }
 

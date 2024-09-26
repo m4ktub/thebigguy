@@ -1,10 +1,12 @@
 import { Ecc, shaRmd160, toHex } from 'ecash-lib';
 import * as xecaddr from 'ecashaddrjs';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { PRV_KEY } from './constants';
 import { type Party, createScript, minUnitForAllShares } from './contract/script';
 import { createTx } from './contract/tx';
-import { queryContract } from './query';
+import { storeContract } from './database';
+import { getFeatures } from './features';
+import { queryContract, queryFeatures } from './query';
 
 const NULL_TXID = '0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -16,13 +18,38 @@ export interface P2SHResponse {
     minValue: number;
     maxValue: number;
     parties: Party[];
+    store: boolean;
+    autoSpend: boolean;
 }
 
-export default function p2sh(req: Request, res: Response) {
+export default function p2sh(req: Request, res: Response, next: NextFunction) {
     const ecc = new Ecc();
 
     // validate and extract parameters
     const { fee, parties } = queryContract(req);
+    const requestedFeatures = queryFeatures(req);
+    const requestedStore = requestedFeatures.includes("store");
+    const requestedAutoSpend = requestedFeatures.includes("autospend");
+
+    // validate features, if requested
+    if (requestedFeatures.length > 0) {
+        const features = getFeatures();
+        if (!features.address) {
+            throw new Error("Features were requested but the server does not support features.");
+        }
+
+        const serverParty = parties.find(party => party.address === features.address);
+        if (!serverParty) {
+            throw new Error("Features were requested but the server was not included as a party.");
+        }
+
+        let expectedShare = 0;
+        expectedShare += requestedStore ? features.store : 0;
+        expectedShare += requestedAutoSpend ? features.autospend : 0;
+        if (serverParty.share != expectedShare) {
+            throw new Error("Features were requested but the server was not assigned the expected share.");
+        }
+    }
 
     // build contract
     const contract = createScript(ecc, PRV_KEY, fee, parties);
@@ -39,14 +66,35 @@ export default function p2sh(req: Request, res: Response) {
     const fakeTx = createTx(ecc, PRV_KEY, fakeUtxo, fee, parties);
     const dustValue = fakeTx.serSize();
 
-    // send response
-    res.json({
-        address: contractAddress,
-        hash: toHex(contractHash),
-        fee,
-        parties,
-        dustValue,
-        minValue,
-        maxValue: 0x7fffffff
-    } as P2SHResponse);
+    // prepare async response
+    let async: Promise<any> = Promise.resolve();
+
+    // store contract, if requested
+    const hash = toHex(contractHash);
+    if (requestedStore) {
+        async = storeContract({
+            address: contractAddress,
+            hash: hash,
+            fee,
+            parties,
+            autoSpend: requestedStore
+        });
+    }
+
+    // send JSON response on normal conditions
+    async.then(() => {
+        res.json({
+            address: contractAddress,
+            hash: hash,
+            fee,
+            parties,
+            dustValue,
+            minValue,
+            maxValue: 0x7fffffff,
+            store: requestedStore,
+            autoSpend: requestedAutoSpend
+        } as P2SHResponse);
+    })
+    // ensure async exceptions are routed
+    .catch(next);
 }

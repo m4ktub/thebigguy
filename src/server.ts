@@ -126,23 +126,17 @@ function shutdown() {
 
   // close database
   console.log("Closing database...");
-  database.close(err => {
-    if (err) {
-      console.log("Failed to close database: ", err)
-    } else {
-      console.log("Database closed")
-    }
-  });
+  database.finalize()
+    .then(() => console.log("Database closed"))
+    .catch(error => console.log("Failed to close database:", error));
 }
 
 //
 // initialize database
 //
 
-database.open(err => {
+database.initialize().catch(error => {
   // shutdown server on error
-  if (err) {
-    console.log("Failed to open database: ", err);
-    shutdown();
-  }
+  console.log("Failed to initialize database:", error);
+  shutdown();
 });

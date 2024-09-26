@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS p2sh (
 
 CREATE TABLE IF NOT EXISTS shares (
   hash text,
-  share integer,
+  position integer,
   address text,
-  PRIMARY key (hash, share, address)
+  share integer,
+  PRIMARY key (hash, position, address)
 );

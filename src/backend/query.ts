@@ -2,6 +2,30 @@ import * as xecaddr from 'ecashaddrjs';
 import type { Request } from 'express';
 import type { Party } from './contract/script';
 
+function queryParty(req: Request, i: number): Party | null {
+    const queryAddress = req.query[`address${i}`];
+    const queryShare = req.query[`share${i}`];
+
+    if (!queryAddress || !queryShare) {
+        return null;
+    }
+
+    const { prefix, type, hash } = xecaddr.decode(queryAddress.toString(), false);
+    if (prefix !== "ecash") {
+        throw new Error("All addresses must be valid ecash addresses");
+    }
+
+    const parsedShare = Number(queryShare.toString());
+    if (isNaN(parsedShare) || parsedShare < 1 || parsedShare > 999) {
+        throw new Error("All shares must be integer numbers between 1 and 999");
+    }
+
+    return {
+        address: xecaddr.encode(prefix, type, hash),
+        share: parsedShare
+    };
+}
+
 export function queryContract(req: Request) {
     // validate fee
     const queryFee = req.query.fee;
@@ -18,31 +42,8 @@ export function queryContract(req: Request) {
         throw new Error("The specified fee is too high");
     }
 
-    // validate and accumulate parties
-    let parties: Party[] = [];
-    for (let i = 1; i < 4; i++) {
-        const queryAddress = req.query[`address${i}`];
-        const queryShare = req.query[`share${i}`];
-
-        if (!queryAddress || !queryShare) {
-            break;
-        }
-
-        const { prefix, type, hash } = xecaddr.decode(queryAddress.toString(), false);
-        if (prefix !== "ecash") {
-            throw new Error("All addresses must be valid ecash addresses");
-        }
-
-        const parsedShare = Number(queryShare.toString());
-        if (isNaN(parsedShare) || parsedShare < 1 || parsedShare > 999) {
-            throw new Error("All shares must be integer numbers between 1 and 999");
-        }
-
-        parties.push({
-            address: xecaddr.encode(prefix, type, hash),
-            share: parsedShare
-        });
-    }
+    // validate and accumulate parties, commission at the end
+    let parties = [1, 2, 0].map(i => queryParty(req, i)).filter(p => p != null);
 
     // validate number of parties
     if (parties.length < 2 || parties.length > 3) {
@@ -93,4 +94,21 @@ export function queryUtxo(req: Request) {
         outIdx: parsedOutIdx,
         value: parsedValue
     };
+}
+
+export function queryFeatures(req: Request) {
+    var features: string[] = [];
+
+    const enabled = req.query['enable'];
+    if (!enabled) {
+        return features;
+    }
+
+    if (typeof enabled == "string") {
+        features.push(enabled);
+    } else if (Array.isArray(enabled) && enabled.every(o => typeof o == "string")) {
+        enabled.forEach(s => features.push(s));
+    }
+
+    return features;
 }

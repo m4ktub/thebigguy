@@ -46,6 +46,11 @@ function updateDetails(options: PageOptions, data: P2SHResponse) {
   party2ShareEl.html(share2html(data.parties[1].share));
   contractAddressEl.html(addr2html(data.address));
 
+  // if the contract was stored, change location to the short version
+  if (data.store) {
+    window.history.pushState({}, "", `/h/${data.hash}`);
+  }
+
   return data;
 }
 

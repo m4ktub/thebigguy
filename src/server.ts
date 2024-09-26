@@ -7,6 +7,7 @@ import { type AddressInfo } from 'net';
 import path from 'path';
 import * as database from './backend/database';
 import features from './backend/features';
+import hash from './backend/hash';
 import logger from './backend/logging';
 import p2sh from './backend/p2sh';
 import status from './backend/status';
@@ -32,6 +33,12 @@ app.use(logger);
 
 const staticHandler = express.static(path.join(__dirname, 'frontend'));
 app.use(staticHandler);
+
+//
+// register short url handler
+//
+
+app.get('/h/:hash', hash);
 
 //
 // register backend api

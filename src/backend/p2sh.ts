@@ -4,7 +4,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { PRV_KEY } from './constants';
 import { type Party, createScript, minUnitForAllShares } from './contract/script';
 import { createTx } from './contract/tx';
-import { storeContract } from './database';
+import { type DbContract, storeContract } from './database';
 import { getFeatures } from './features';
 import { queryContract, queryFeatures } from './query';
 
@@ -23,6 +23,7 @@ export interface P2SHResponse {
 }
 
 export default function p2sh(req: Request, res: Response, next: NextFunction) {
+    // create Ecc instance
     const ecc = new Ecc();
 
     // validate and extract parameters
@@ -52,9 +53,36 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
     }
 
     // build contract
-    const contract = createScript(ecc, PRV_KEY, fee, parties);
-    const contractHash = shaRmd160(contract.bytecode);
+    const contractScript = createScript(ecc, PRV_KEY, fee, parties);
+    const contractHash = shaRmd160(contractScript.bytecode);
+    const contractHashHex = toHex(contractHash);
     const contractAddress = xecaddr.encode("ecash", "P2SH", contractHash);
+
+    const contract: DbContract = {
+        address: contractAddress,
+        hash: contractHashHex,
+        fee,
+        parties,
+        store: requestedStore,
+        autoSpend: requestedAutoSpend
+    };
+
+    // prepare async response
+    let async: Promise<any> = Promise.resolve();
+
+    // store contract, if requested
+    if (requestedStore) {
+        async = storeContract(contract);
+    }
+
+    // send JSON response and route exception
+    const response = prepareP2SHResponse(ecc, contract);
+    async.then(() => res.json(response)).catch(next);
+}
+
+export function prepareP2SHResponse(ecc: Ecc, contract: DbContract): P2SHResponse {
+    const fee = contract.fee;
+    const parties = contract.parties;
 
     // calculate the minimum value that can still produce at least one share
     const minUnit = minUnitForAllShares(parties);
@@ -66,35 +94,10 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
     const fakeTx = createTx(ecc, PRV_KEY, fakeUtxo, fee, parties);
     const dustValue = fakeTx.serSize();
 
-    // prepare async response
-    let async: Promise<any> = Promise.resolve();
-
-    // store contract, if requested
-    const hash = toHex(contractHash);
-    if (requestedStore) {
-        async = storeContract({
-            address: contractAddress,
-            hash: hash,
-            fee,
-            parties,
-            autoSpend: requestedStore
-        });
-    }
-
-    // send JSON response on normal conditions
-    async.then(() => {
-        res.json({
-            address: contractAddress,
-            hash: hash,
-            fee,
-            parties,
-            dustValue,
-            minValue,
-            maxValue: 0x7fffffff,
-            store: requestedStore,
-            autoSpend: requestedAutoSpend
-        } as P2SHResponse);
-    })
-    // ensure async exceptions are routed
-    .catch(next);
+    return {
+        ...contract,
+        dustValue,
+        minValue,
+        maxValue: 0x7fffffff,
+    };
 }

@@ -127,6 +127,7 @@ export interface DbContract {
   fee: number,
   registeredDate?: Date,
   parties: Party[],
+  store: boolean,
   autoSpend: boolean
 }
 
@@ -198,6 +199,7 @@ export function loadContract(hash: string) {
       address: p2shRecord.address as string,
       fee: p2shRecord.fee as number,
       registeredDate: new Date(1000 * (p2shRecord.registered_date as number)),
+      store: true,
       autoSpend: p2shRecord.auto_spend !== 0,
       parties: shareRecords.map(share => {
         return {
@@ -206,5 +208,13 @@ export function loadContract(hash: string) {
         };
       })
     };
+  });
+}
+
+export function getAutoSpendContracts() {
+  return withDatabase(async database => {
+    const rows = await promisify<any[]>(cb =>
+      database.all("select hash from p2sh where auto_spend = 1", [], cb));
+    return rows.map(row => row.hash as string);
   });
 }

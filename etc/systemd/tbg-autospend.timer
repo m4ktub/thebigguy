@@ -1,0 +1,10 @@
+[Unit]
+Description=The Big Guy auto spend timer
+
+[Timer]
+# Every 10 min
+OnCalendar=*-*-* *:00/10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

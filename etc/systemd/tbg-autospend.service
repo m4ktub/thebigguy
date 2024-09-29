@@ -1,0 +1,8 @@
+[Unit]
+Description=The Big Guy auto spend script
+
+[Service]
+Type=oneshot
+User=ubuntu
+EnvironmentFile=/home/ubuntu/env.conf
+ExecStart=npx ts-node /home/ubuntu/thebigguy/scripts/autospend.ts

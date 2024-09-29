@@ -1,0 +1,16 @@
+[Unit]
+Description=The Big Guy node application to generate and manage splitting eCash addresses
+Documentation=https://github.com/m4ktub/thebigguy
+After=network.target
+
+[Service]
+# assumes: sudo setcap 'cap_net_bind_service=+ep' /usr/bin/node
+Environment=PORT=80 HTTPS_PORT=443
+EnvironmentFile=/home/ubuntu/env.conf
+Type=simple
+User=ubuntu
+ExecStart=/usr/bin/node /home/ubuntu/thebigguy/dist/src/server.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

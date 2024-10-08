@@ -37,15 +37,17 @@ The application can be deployed ExpressJS being used directly as web server. Tha
 
 The `etc/systemd` folder contains templates that can be used on a standard Ubuntu system. The `tbg.service` file provides a simple  _systemd_ service unit that launches the server and restarts on failure. The `env.conf` file provides a template for the environment variables that control the service. 
 
-| Variable             | Description |
-| -------------------- | ------------- |
-| `PORT`               |  The HTTP port to use or `3000` if not specified. |
-| `HTTPS_PORT`         |  The HTTPS port to use. When specified the `HTTPS_KEY` and `HTTPS_CERT` must also be specified. |
-| `LOG_ACCESS_FILE`    |  The path to the HTTP access log. If specified the server will log requests in Apache's combined format. |
-| `HTTPS_KEY`          |  The path to private key to the HTTPS certificate. |
-| `HTTPS_CERT`         |  The path to the HTTPS certificate for the host. |
-| `DATABASE_PATH`      |  The path to the SQLite database file or `dist/etc/database`, if not specified. The database will be created automatically. |
-| `COMMISSION_ADDRESS` |  The XEC address for the application's commission address. If not specified then features that require persistence will not be active. When specified, this address will be added as an extra party to the contract. |
+| Variable               | Description |
+| ---------------------- | ------------- |
+| `PORT`                 | The HTTP port to use or `3000`, if not specified. |
+| `HTTPS_PORT`           | The HTTPS port to use. When specified the `HTTPS_KEY` and `HTTPS_CERT` must also be specified. |
+| `LOG_ACCESS_FILE`      | The path to the HTTP access log. If specified the server will log requests in Apache's combined format. |
+| `HTTPS_KEY`            | The path to private key to the HTTPS certificate. |
+| `HTTPS_CERT`           | The path to the HTTPS certificate for the host. |
+| `DATABASE_PATH`        | The path to the SQLite database file or `dist/etc/database`, if not specified. The database will be created automatically.   |
+| `COMMISSION_ADDRESS`   | The XEC address for the application's commission address. If not specified then features that require persistence will not be active. When specified, this address will be added as an extra party to the contract. |
+| `COMMISSION_STORE`     | The share value of the store commission or `5` (0.5%), if not specified. |
+| `COMMISSION_AUTOSPEND` | The share value of the auto-spend commission or `20` (2.0%), if not specified. This share value will be added to the commission to store the address. |
 
 ### Autospend
 

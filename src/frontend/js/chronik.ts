@@ -1,15 +1,24 @@
-import { type BlockchainInfo, ChronikClient, type SubscribeMsg, type Tx, type Utxo } from 'chronik-client';
-export type { Utxo } from 'chronik-client';
+import {
+  type BlockchainInfo,
+  ChronikClient,
+  MsgBlockClient,
+  MsgTxClient,
+  type ScriptUtxo,
+  type Tx,
+  type WsMsgClient
+} from 'chronik-client';
+export type { ScriptUtxo } from 'chronik-client';
 
-const chronik = new ChronikClient("https://chronik.be.cash/xec");
+const chronik = new ChronikClient(["https://chronik.be.cash/xec"]);
 
 export function broadcastTx(tx: string) {
   return chronik.broadcastTx(tx, false);
 }
 
-export async function streamUtxos(hash: string, dustValue: number, receiver: (utxo: Utxo) => void) {
+export async function streamUtxos(hash: string, dustValue: number, receiver: (utxo: ScriptUtxo) => void) {
   // start by getting existing utxos
-  const scriptUtxos = await chronik.script('p2sh', hash).utxos();
+  const response = await chronik.script('p2sh', hash).utxos();
+  const utxos = response.utxos;
 
   // filter out dust utxos, that are not spendable
   //
@@ -18,8 +27,8 @@ export async function streamUtxos(hash: string, dustValue: number, receiver: (ut
   // an usability point of view, it's better to ommit those than to constantly
   // present rows for which the user can do nothing.
   //
-  const notDustFn = (utxo: Utxo) => BigInt(utxo.value) >= dustValue
-  const nonDustutxos = scriptUtxos.flatMap(v => v.utxos).filter(notDustFn);
+  const notDustFn = (utxo: ScriptUtxo) => BigInt(utxo.value) >= dustValue
+  const nonDustutxos = utxos.filter(notDustFn);
 
   // split non dust utxos into coinbase and standard utxos
   const [coinbaseUtxos, standardUtxos] = split(nonDustutxos, utxo => utxo.isCoinbase);
@@ -55,7 +64,7 @@ export async function streamUtxos(hash: string, dustValue: number, receiver: (ut
   await ws.waitForOpen();
 
   // subscribe to the specific P2SH address
-  ws.subscribe('p2sh', hash);
+  ws.subscribeToScript('p2sh', hash);
 }
 
 function split<T>(values: T[], filter: (v: T) => boolean): T[][] {
@@ -66,21 +75,35 @@ function split<T>(values: T[], filter: (v: T) => boolean): T[][] {
   }, accumulator);
 }
 
-function splitCoinbaseUtxos(coinaseUtxos: Utxo[], currentHeight: number) {
-  const immatureFn = (utxo: Utxo) => utxo.isCoinbase && currentHeight - utxo.blockHeight < 100;
+function splitCoinbaseUtxos(coinaseUtxos: ScriptUtxo[], currentHeight: number) {
+  const immatureFn = (utxo: ScriptUtxo) => utxo.isCoinbase && currentHeight - utxo.blockHeight < 100;
   return split(coinaseUtxos, immatureFn);
 }
 
 interface ListeningState {
-  receiver: (utxo: Utxo) => void,
+  receiver: (utxo: ScriptUtxo) => void,
   hash: string,
-  immatureUtxos: Utxo[],
+  immatureUtxos: ScriptUtxo[],
   mempoolTxs: Tx[]
 }
 
-function listenUtxos(msg: SubscribeMsg, state: ListeningState) {
+function listenUtxos(msg: WsMsgClient, state: ListeningState) {
   switch (msg.type) {
-    case 'Confirmed':
+    case 'Tx':
+      listenUtxosFromTx(msg, state);
+      break;
+    case 'Block':
+      listenUtxosFromBlock(msg, state);
+      break;
+    case 'Error':
+      console.error("Received error from Chronik:", msg.msg);
+      break;
+  }
+}
+
+function listenUtxosFromTx(msg: MsgTxClient, state: ListeningState) {
+  switch (msg.msgType) {
+    case 'TX_CONFIRMED':
       // only process confirmed tx if it was not seen before, othwerwise assume
       // that tx will be confirmed on the next block to avoid requesting the
       // details twice
@@ -89,7 +112,7 @@ function listenUtxos(msg: SubscribeMsg, state: ListeningState) {
         chronik.tx(msg.txid).then(tx => extractUtxos(tx, state));
       }
       break;
-    case 'AddedToMempool':
+    case 'TX_ADDED_TO_MEMPOOL':
       // process transaction
       chronik.tx(msg.txid).then(tx => {
         // store transaction for later processing on BlockConnected
@@ -99,7 +122,12 @@ function listenUtxos(msg: SubscribeMsg, state: ListeningState) {
         extractUtxos(tx, state);
       });
       break;
-    case 'BlockConnected':
+  }
+}
+
+function listenUtxosFromBlock(msg: MsgBlockClient, state: ListeningState) {
+  switch (msg.msgType) {
+    case 'BLK_CONNECTED':
       // only get current tip, to avoid unecessary details
       chronik.blockchainInfo().then(info => {
         // process stored mempool txs, assuming confirmation
@@ -108,9 +136,6 @@ function listenUtxos(msg: SubscribeMsg, state: ListeningState) {
         // process previously immature coinbase utxos
         processImmature(info, state);
       });
-      break;
-    case 'Error':
-      console.error("Received error from Chronik:", msg.errorCode, msg.msg)
       break;
   }
 }
@@ -127,11 +152,9 @@ async function extractUtxos(tx: Tx, state: ListeningState) {
     state.receiver({
       outpoint: { txid: tx.txid, outIdx: outIdx },
       value: output.value,
-      blockHeight: tx.block ? tx.block.height : -1,
-      network: tx.network,
+      blockHeight: tx.block?.height || -1,
       isCoinbase: tx.isCoinbase,
-      slpMeta: undefined,
-      slpToken: undefined
+      isFinal: false
     });
   });
 }
@@ -139,8 +162,7 @@ async function extractUtxos(tx: Tx, state: ListeningState) {
 function processMempool(info: BlockchainInfo, state: ListeningState) {
   // assume block was found now
   const nowMs = Date.now();
-  const nowSec = Math.floor(nowMs / 1000);
-  const timestamp = nowSec.toString();
+  const timestamp = Math.floor(nowMs / 1000);
 
   // process all stored transations
   state.mempoolTxs.forEach(tx => {

@@ -1,9 +1,9 @@
-import { BlockchainInfo, ChronikClient, type Utxo } from 'chronik-client';
+import { type BlockchainInfo, ChronikClient, type ScriptUtxo } from 'chronik-client';
 import { Ecc, initWasm, toHex } from 'ecash-lib';
 import { PRV_KEY } from '../src/backend/constants';
 import { createTx } from '../src/backend/contract/tx';
-import { DbContract, getAutoSpendContracts, loadContract } from '../src/backend/database';
-import { P2SHResponse, prepareP2SHResponse } from '../src/backend/p2sh';
+import { type DbContract, getAutoSpendContracts, loadContract } from '../src/backend/database';
+import { type P2SHResponse, prepareP2SHResponse } from '../src/backend/p2sh';
 
 //
 // constants
@@ -59,10 +59,9 @@ async function process(ecc: Ecc, hash: string, chronik: ChronikClient, tip: Bloc
 
     console.log("    loading utxos from blockchain...");
     const result = await chronik.script('p2sh', hash).utxos();
-    const utxos = result.flatMap(result => result.utxos);
     const parameters = prepareP2SHResponse(ecc, contract);
-    const spendable = utxos.filter(utxo => isSpendable(parameters, tip, utxo));
-    console.log("      total", utxos.length, "spendable", spendable.length);
+    const spendable = result.utxos.filter(utxo => isSpendable(parameters, tip, utxo));
+    console.log("      total", result.utxos.length, "spendable", spendable.length);
 
     // stop quickly, if there's no spendable utxo
     if (spendable.length == 0) {
@@ -88,7 +87,7 @@ async function process(ecc: Ecc, hash: string, chronik: ChronikClient, tip: Bloc
   }
 }
 
-function isSpendable(parameters: P2SHResponse, tip: BlockchainInfo, utxo: Utxo) {
+function isSpendable(parameters: P2SHResponse, tip: BlockchainInfo, utxo: ScriptUtxo) {
   // filter small UTXOs
   if (Number(utxo.value) < parameters.dustValue) {
     return false;
@@ -109,7 +108,7 @@ function isSpendable(parameters: P2SHResponse, tip: BlockchainInfo, utxo: Utxo) 
   return true;
 }
 
-function spend(ecc: Ecc, contract: DbContract, chronik: ChronikClient, utxo: Utxo) {
+function spend(ecc: Ecc, contract: DbContract, chronik: ChronikClient, utxo: ScriptUtxo) {
   const outpoint = utxo.outpoint;
   const value = Number(utxo.value);
   const tx = createTx(ecc, PRV_KEY, { ...outpoint, value }, contract.fee, contract.parties);

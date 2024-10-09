@@ -9,7 +9,11 @@ import { type P2SHResponse, prepareP2SHResponse } from '../src/backend/p2sh';
 // constants
 //
 
-const CHRONIK_URLS = ["https://chronik.be.cash/xec"];
+const CHRONIK_URLS = [
+  'https://chronik.pay2stay.com/xec2',
+  'https://chronik-native1.fabien.cash',
+  'https://chronik-native2.fabien.cash',
+];
 
 //
 // main script

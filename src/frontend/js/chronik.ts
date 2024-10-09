@@ -9,7 +9,11 @@ import {
 } from 'chronik-client';
 export type { ScriptUtxo } from 'chronik-client';
 
-const chronik = new ChronikClient(["https://chronik.be.cash/xec"]);
+const chronik = new ChronikClient([
+  'https://chronik.pay2stay.com/xec2',
+  'https://chronik-native1.fabien.cash',
+  'https://chronik-native2.fabien.cash',
+]);
 
 export function broadcastTx(tx: string) {
   return chronik.broadcastTx(tx, false);

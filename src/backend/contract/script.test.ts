@@ -1,5 +1,4 @@
 import * as utxolib from '@bitgo/utxo-lib';
-import '@jest/globals';
 import {
   Ecc,
   OP_ADD,
@@ -21,6 +20,7 @@ import {
   shaRmd160,
   toHex
 } from 'ecash-lib';
+import { expect } from 'expect';
 import {
   SCRIPT_NOPAY,
   createScript,
@@ -37,7 +37,7 @@ import { pushNumberOp, serializeOutputs } from './utils';
 
 var ecc: Ecc;
 
-beforeAll(() => {
+before(() => {
   return initWasm().then(() => ecc = new Ecc());
 });
 
@@ -46,30 +46,30 @@ beforeAll(() => {
 //
 
 describe('constants', () => {
-  test('SCRIPT_NOPAY', () => {
+  it('SCRIPT_NOPAY', () => {
     expect(SCRIPT_NOPAY.bytecode).toEqual(fromHex("6a"));
   });
 });
 
 describe('utils', () => {
   describe('quotient', () => {
-    test('by zero fails', () => {
+    it('by zero fails', () => {
       expect(() => Number(quotient(1, 0))).toThrow();
     });
 
-    test('dust related', () => {
+    it('dust related', () => {
       expect(Number(quotient(546, 1))).toBe(546);
       expect(Number(quotient(546, 4))).toBe(136);
       expect(Number(quotient(546, 546))).toBe(1);
       expect(Number(quotient(546, 547))).toBe(0);
     });
 
-    test('fixed edge cases', () => {
+    it('fixed edge cases', () => {
       expect(Number(quotient(4294967295, 2147483648))).toStrictEqual(1);
       expect(Number(quotient(4294967295, 4294967294))).toStrictEqual(1);
     });
 
-    test('random cases', () => {
+    it('random cases', () => {
       for (let i = 0; i < 10; i++) {
         const v1 = Math.floor(4294967295 * Math.random());
         const v2 = Math.floor(4294967295 * Math.random());
@@ -78,7 +78,7 @@ describe('utils', () => {
     });
   });
 
-  test('minUnitForShare', () => {
+  it('minUnitForShare', () => {
     expect(minUnitForShare(999)).toEqual(1);
     expect(minUnitForShare(546)).toEqual(1);
     expect(minUnitForShare(545)).toEqual(2);
@@ -124,7 +124,7 @@ describe('utils', () => {
     expect(minUnitForShare(1)).toEqual(546);
   });
 
-  test('minUnitForAllShares', () => {
+  it('minUnitForAllShares', () => {
     expect(minUnitForAllShares(parties(900, 100))).toEqual(1);
     expect(minUnitForAllShares(parties(546, 454))).toEqual(1);
     expect(minUnitForAllShares(parties(545, 455))).toEqual(2);
@@ -137,7 +137,7 @@ describe('createScript', () => {
   const pubKey = new Uint8Array(ecpair.publicKey)
   const prvKey = new Uint8Array(ecpair.privateKey || []);
 
-  test('validate arguments', () => {
+  it('validate arguments', () => {
     // number of parties
     expect(() => createScript(ecc, prvKey, 10000, parties())).toThrow();
     expect(() => createScript(ecc, prvKey, 10000, parties(1000))).toThrow();
@@ -162,7 +162,7 @@ describe('createScript', () => {
     expect(() => createScript(ecc, new Uint8Array(32), 2000, parties(500, 500))).toThrow();
   });
 
-  test('constants are present', () => {
+  it('constants are present', () => {
     const fee = 12345;
     const tparties = parties(123, 877);
     const script = createScript(ecc, prvKey, fee, tparties);
@@ -220,7 +220,7 @@ describe('createScript', () => {
    * validate outputs, it's important to check that the correct number of bytes
    * are split from the prefix before hashing.
    */
-  test('varint script size', () => {
+  it('varint script size', () => {
     const script = createScript(ecc, prvKey, 2000, parties(900, 100));
     const hex = toHex(script.bytecode);
 
@@ -242,7 +242,7 @@ describe('createScript', () => {
    * done to the script. That is no acceptable because it would make previous
    * contracts unusable by generating a new P2SH address for the same inputs.
    */
-  test('v1 stability', () => {
+  it('v1 stability', () => {
     const script1 = createScript(ecc, prvKey, 2000, parties(900, 100));
     const hash201 = toHex(shaRmd160(script1.bytecode));
     expect(hash201).toEqual("8b4c585d05e90b9663459b49c75dc063a4ef5f7b");

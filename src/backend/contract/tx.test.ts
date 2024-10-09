@@ -1,8 +1,9 @@
 import * as utxolib from '@bitgo/utxo-lib';
-import '@jest/globals';
-import { Ecc, Int, Script, TxOutput, initWasm, shaRmd160, isPushOp, toHex, sha256d } from 'ecash-lib';
-import { createTx } from './tx';
+import { fail } from 'assert';
+import { Ecc, Int, Script, TxOutput, initWasm, isPushOp, sha256d, shaRmd160, toHex } from 'ecash-lib';
+import { expect } from 'expect';
 import { Party, SCRIPT_NOPAY, createScript } from './script';
+import { createTx } from './tx';
 
 //
 // initialize ECC
@@ -10,7 +11,7 @@ import { Party, SCRIPT_NOPAY, createScript } from './script';
 
 var ecc: Ecc;
 
-beforeAll(() => {
+before(() => {
   return initWasm().then(() => ecc = new Ecc());
 });
 
@@ -22,18 +23,18 @@ describe('createTx', () => {
   const ecpair = utxolib.ECPair.fromWIF('L2vP83Ct244KpL16aCRqdzUp8Rj58d9xVzpuaaHs4STVHQbJERBi', utxolib.networks.ecash);
   const prvKey = new Uint8Array(ecpair.privateKey || []);
 
-  test('validate fee', () => {
+  it('validate fee', () => {
     expect(() => createTx(ecc, prvKey, utxo(10000), 1000, shares(900, 100))).toThrow();
   });
 
-  test('no shares', () => {
+  it('no shares', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const tx = createTx(ecc, prvKey, utxo(2999), fee, parties);
     expectOutputs(tx.outputs, { value: 0, script: SCRIPT_NOPAY });
   });
 
-  test('one share', () => {
+  it('one share', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const tx = createTx(ecc, prvKey, utxo(7999), fee, parties);
@@ -43,7 +44,7 @@ describe('createTx', () => {
     });
   });
 
-  test('two shares', () => {
+  it('two shares', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const tx = createTx(ecc, prvKey, utxo(8000), fee, parties);
@@ -53,7 +54,7 @@ describe('createTx', () => {
     );
   });
 
-  test('two shares', () => {
+  it('two shares', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const tx = createTx(ecc, prvKey, utxo(8000), fee, parties);
@@ -63,12 +64,12 @@ describe('createTx', () => {
     );
   });
 
-  test('input split', () => {
+  it('input split', () => {
     const fee = 2000;
     const parties = shares(900, 100);
-    const contract = createScript(new Ecc(), prvKey, fee, parties);
+    const contract = createScript(ecc, prvKey, fee, parties);
     const outputScript = Script.p2sh(shaRmd160(contract.bytecode));
-    const tx = createTx(new Ecc(), prvKey, utxo(2147483649), fee, parties);
+    const tx = createTx(ecc, prvKey, utxo(2147483649), fee, parties);
 
     expectOutputs(tx.outputs,
       { value: 1073740825, script: outputScript },
@@ -76,11 +77,11 @@ describe('createTx', () => {
     );
   });
 
-  test('input utxo', () => {
+  it('input utxo', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const input = utxo(Math.floor(Math.random() * 1000000) + fee);
-    const tx = createTx(new Ecc(), prvKey, input, fee, parties);
+    const tx = createTx(ecc, prvKey, input, fee, parties);
 
     expect(tx.inputs.length).toBe(1);
     expect(tx.inputs[0].prevOut.txid).toBe(input.txid);
@@ -88,10 +89,10 @@ describe('createTx', () => {
     expect(tx.inputs[0].signData?.value).toBe(input.value);
   });
 
-  test('input script', () => {
+  it('input script', () => {
     const fee = 2000;
     const parties = shares(900, 100);
-    const tx = createTx(new Ecc(), prvKey, utxo(8000), fee, parties);
+    const tx = createTx(ecc, prvKey, utxo(8000), fee, parties);
 
     const opsIter = tx.inputs[0].script?.ops();
     const prevouts = opsIter?.next();
@@ -110,19 +111,19 @@ describe('createTx', () => {
     const end = opsIter?.next();
 
     // check stack
-    if (!isPushOp(prevouts)) fail();
-    if (!isPushOp(outputs)) fail();
-    if (!isPushOp(sig)) fail();
-    if (!isPushOp(preimage1)) fail();
-    if (!isPushOp(preimage2)) fail();
-    if (!isPushOp(preimage3)) fail();
-    if (!isPushOp(preimage4)) fail();
-    if (!isPushOp(preimage5)) fail();
-    if (!isPushOp(preimage6)) fail();
-    if (!isPushOp(preimage7)) fail();
-    if (!isPushOp(preimage8)) fail();
-    if (!isPushOp(preimage9)) fail();
-    if (!isPushOp(script)) fail();
+    if (!isPushOp(prevouts)) fail("not pushop: prevouts");
+    if (!isPushOp(outputs)) fail("not pushop: outputs");
+    if (!isPushOp(sig)) fail("not pushop: signature");
+    if (!isPushOp(preimage1)) fail("not pushop: preimage1");
+    if (!isPushOp(preimage2)) fail("not pushop: preimage2");
+    if (!isPushOp(preimage3)) fail("not pushop: preimage3");
+    if (!isPushOp(preimage4)) fail("not pushop: preimage4");
+    if (!isPushOp(preimage5)) fail("not pushop: preimage5");
+    if (!isPushOp(preimage6)) fail("not pushop: preimage6");
+    if (!isPushOp(preimage7)) fail("not pushop: preimage7");
+    if (!isPushOp(preimage8)) fail("not pushop: preimage8");
+    if (!isPushOp(preimage9)) fail("not pushop: preimage9");
+    if (!isPushOp(script)) fail("not pushop: script");
     expect(end).toBeUndefined();
 
     // validate basic known sizes

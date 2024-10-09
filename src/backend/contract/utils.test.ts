@@ -1,9 +1,9 @@
-import '@jest/globals';
-import { toHex, Script, OP_RETURN, fromHex } from 'ecash-lib';
+import { OP_RETURN, Script, fromHex, toHex } from 'ecash-lib';
+import { expect } from 'expect';
 import { pushNumberOp, serializeOutputs, serializePrevouts } from './utils';
 
 describe('serializePrevouts', () => {
-  test('demo', () => {
+  it('demo', () => {
     const inputs = [{
       prevOut: {
         txid: "0000000000000000000000000000000000000000000000000000000000000001",
@@ -15,7 +15,7 @@ describe('serializePrevouts', () => {
     expect(toHex(result)).toEqual("010000000000000000000000000000000000000000000000000000000000000000000000");
   });
 
-  test('other', () => {
+  it('other', () => {
     const inputs = [
       {
         prevOut: {
@@ -40,13 +40,13 @@ describe('serializePrevouts', () => {
 });
 
 describe('serializeOutputs', () => {
-  test('op_return', () => {
+  it('op_return', () => {
     const outputs = [{ value: 0, script: Script.fromOps([ OP_RETURN ]) }];
     const result = serializeOutputs(outputs);
     expect(toHex(result)).toEqual("0000000000000000016a");
   });
 
-  test('endianess', () => {
+  it('endianess', () => {
     const outputs = [
       {
         value: 9000,
@@ -67,7 +67,7 @@ describe('serializeOutputs', () => {
 });
 
 describe('pushNumberOp', () => {
-  test('standard', () => {
+  it('standard', () => {
     const checks = [
       { num: 0, result: "00" },
       { num: 1, result: "51" },

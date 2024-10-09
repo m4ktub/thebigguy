@@ -1,20 +1,19 @@
-import '@jest/globals';
-import express from 'express';
-import type { Request, Response }  from 'express';
-
+import { expect } from 'expect';
+import { Request, Response } from 'express';
+import * as sinon from 'sinon';
 import status from './status';
 
 describe('status endpoint', () => {
-  test('expected properties', () => {
-    let req: Request = Object.create(express.request);
-    let res: Response = Object.create(express.response);
+  it('expected properties', () => {
+    let req = {} as Request;
+    let res = {} as Response;
 
-    jest.spyOn(res, 'json').mockReturnValue(res);
+    const stub = res.json = sinon.stub();
 
     status(req, res);
 
-    expect(jest.mocked(res.json)).toHaveBeenCalled();
-    let data = (jest.mocked(res.json).mock.lastCall || [{}])[0];
+    expect(stub.calledOnce).toBe(true);
+    let data = stub.lastCall.firstArg || {};
 
     expect(data).toHaveProperty("ok");
     expect(data).toHaveProperty("since");

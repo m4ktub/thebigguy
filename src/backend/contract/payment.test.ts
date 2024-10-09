@@ -1,6 +1,6 @@
 import * as utxolib from '@bitgo/utxo-lib';
-import '@jest/globals';
 import { Ecc, Script, TxOutput, initWasm, shaRmd160 } from 'ecash-lib';
+import { expect } from 'expect';
 import { createOutputs } from './payment';
 import { SCRIPT_NOPAY, createScript, type Party } from './script';
 
@@ -10,7 +10,7 @@ import { SCRIPT_NOPAY, createScript, type Party } from './script';
 
 var ecc: Ecc;
 
-beforeAll(() => {
+before(() => {
   return initWasm().then(() => ecc = new Ecc());
 });
 
@@ -39,7 +39,7 @@ describe('payments', () => {
     });
   }
 
-  test('none', () => {
+  it('none', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const contract = createScript(ecc, prvKey, fee, parties);
@@ -48,7 +48,7 @@ describe('payments', () => {
     expectOutputs(outputs, { value: 0, script: SCRIPT_NOPAY });
   });
 
-  test('single', () => {
+  it('single', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const contract = createScript(ecc, prvKey, fee, parties);
@@ -64,7 +64,7 @@ describe('payments', () => {
     });
   });
 
-  test('double', () => {
+  it('double', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const contract = createScript(ecc, prvKey, fee, parties);
@@ -80,7 +80,7 @@ describe('payments', () => {
     );
   });
 
-  test('edge', () => {
+  it('edge', () => {
     const fee = 2000;
     const parties = shares(818, 182);
     const contract = createScript(ecc, prvKey, fee, parties);
@@ -91,7 +91,7 @@ describe('payments', () => {
     );
   });
 
-  test('split', () => {
+  it('split', () => {
     const fee = 2000;
     const parties = shares(900, 100);
     const contract = createScript(ecc, prvKey, fee, parties);

@@ -43,6 +43,11 @@
         <span class="value address">...</span>
         <span class="value share">...</span>
       </p>
+      <p class="commission">
+        <span class="label">Commission</span>
+        <span class="value address">...</span>
+        <span class="value share">...</span>
+      </p>
     </section>
     <section id="outputs">
       <table>
@@ -100,7 +105,8 @@
           party2Address: "#contract .party:nth-child(5) .address",
           party1Share: "#contract .party:nth-child(4) .share",
           party2Share: "#contract .party:nth-child(5) .share",
-          fee: "#contract .fee .value"
+          fee: "#contract .fee .value",
+          commission: "#contract .commission"
         },
         outputs: {
           table: "#outputs table",

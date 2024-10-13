@@ -17,6 +17,7 @@ interface DetailsSelectors {
   party1Share: string;
   party2Share: string;
   fee: string;
+  commission: string;
 }
 
 interface OutputsSelectors {
@@ -28,18 +29,25 @@ export function load(options: PageOptions) {
   return fetch(`/api/p2sh${location.search}`)
     .then(res => res.json() as Promise<P2SHResponse>)
     .then(data => updateDetails(options, data))
-    .then(data => loadUtxos(options, data))
+    .then(value => loadUtxos(options, value.settings, value.data))
     .then(data => maybeAddEmptyRow(options, data));
 }
 
-function updateDetails(options: PageOptions, data: P2SHResponse) {
+async function updateDetails(options: PageOptions, data: P2SHResponse) {
+  // get settings from server
+  const settings = await fetch('/api/settings')
+    .then(res => res.json() as Promise<SettingsResponse>);
+
+  // get elements
   const feeEl = jquery(options.details.fee);
   const party1AddressEl = jquery(options.details.party1Address);
   const party1ShareEl = jquery(options.details.party1Share);
   const party2AddressEl = jquery(options.details.party2Address);
   const party2ShareEl = jquery(options.details.party2Share);
   const contractAddressEl = jquery(options.details.contractAddress);
+  const commissionEl = jquery(options.details.commission);
 
+  // set values
   feeEl.html(xec2html(data.fee));
   party1AddressEl.html(addr2html(data.parties[0].address));
   party1ShareEl.html(share2html(data.parties[0].share));
@@ -47,19 +55,24 @@ function updateDetails(options: PageOptions, data: P2SHResponse) {
   party2ShareEl.html(share2html(data.parties[1].share));
   contractAddressEl.html(addr2html(data.address));
 
+  // set or hide commission values
+  const commissionParty = data.parties.find(party => party.address === settings.address);
+  if (!commissionParty) {
+    commissionEl.hide();
+  } else {
+    commissionEl.find('.address').html(addr2html(commissionParty.address));
+    commissionEl.find('.share').html(share2html(commissionParty.share));
+  }
+
   // if the contract was stored, change location to the short version
   if (data.store) {
     window.history.pushState({}, "", `/h/${data.hash}`);
   }
 
-  return data;
+  return { settings, data };
 }
 
-async function loadUtxos(options: PageOptions, data: P2SHResponse) {
-  // get settings from server
-  const settings = await fetch('/api/settings')
-    .then(res => res.json() as Promise<SettingsResponse>);
-
+async function loadUtxos(options: PageOptions, settings: SettingsResponse, data: P2SHResponse) {
   // find table and body
   const table = jquery(options.outputs.table);
   const tbody = table.find("tbody");

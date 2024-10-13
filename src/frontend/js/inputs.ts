@@ -1,6 +1,6 @@
 import * as xecaddr from 'ecashaddrjs';
 import jquery from 'jquery';
-import type { FeaturesResponse } from '../../backend/features';
+import type { SettingsResponse } from '../../backend/settings';
 
 function boundShare(reserved: number, value: number) {
   return Math.max(1, Math.min(value, 1000 - reserved));
@@ -124,16 +124,17 @@ interface FeaturesOptions {
 }
 
 export function features(options: FeaturesOptions) {
-  fetch('/api/features')
-    .then(res => res.json() as Promise<FeaturesResponse>)
+  fetch('/api/settings')
+    .then(res => res.json() as Promise<SettingsResponse>)
     .then(data => enableFeatures(data, options))
     .catch(_error => disableFeatures(options));
 }
 
-function enableFeatures(data: FeaturesResponse, options: FeaturesOptions) {
+function enableFeatures(data: SettingsResponse, options: FeaturesOptions) {
   // check for a missing address in a successful response
   if (!data.address) {
     disableFeatures(options);
+    return;
   }
 
   // proceed with enabling

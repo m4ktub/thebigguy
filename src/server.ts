@@ -6,7 +6,7 @@ import https from 'https';
 import { type AddressInfo } from 'net';
 import path from 'path';
 import * as database from './backend/database';
-import features from './backend/features';
+import settings from './backend/settings';
 import hash from './backend/hash';
 import logger from './backend/logging';
 import p2sh from './backend/p2sh';
@@ -45,7 +45,7 @@ app.get('/h/:hash', hash);
 //
 
 app.get('/api/status', status);
-app.get('/api/features', features);
+app.get('/api/settings', settings);
 app.get('/api/p2sh', p2sh);
 app.get('/api/tx', tx);
 

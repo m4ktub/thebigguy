@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-export interface FeaturesResponse {
+export interface SettingsResponse {
     address?: string,
     autospend: number,
     store: number
@@ -19,7 +19,7 @@ function toShare(value: string | undefined, def: number) {
     return Number(value || def);
 }
 
-export function getFeatures(): FeaturesResponse {
+export function getSettings(): SettingsResponse {
     return {
         address: withPrefix(process.env.COMMISSION_ADDRESS),
         store: toShare(process.env.COMMISSION_STORE, 5),
@@ -27,6 +27,6 @@ export function getFeatures(): FeaturesResponse {
     };
 }
 
-export default function features(_req: Request, res: Response) {
-    res.json(getFeatures());
+export default function settings(_req: Request, res: Response) {
+    res.json(getSettings());
 }

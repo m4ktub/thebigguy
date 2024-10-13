@@ -5,7 +5,7 @@ import { PRV_KEY } from './constants';
 import { type Party, createScript, minUnitForAllShares } from './contract/script';
 import { createTx } from './contract/tx';
 import { type DbContract, storeContract } from './database';
-import { getFeatures } from './features';
+import { getSettings } from './settings';
 import { queryContract, queryFeatures } from './query';
 
 const NULL_TXID = '0000000000000000000000000000000000000000000000000000000000000000';
@@ -34,7 +34,7 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
 
     // validate features, if requested
     if (requestedFeatures.length > 0) {
-        const features = getFeatures();
+        const features = getSettings();
         if (!features.address) {
             throw new Error("Features were requested but the server does not support features.");
         }

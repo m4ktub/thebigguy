@@ -4,16 +4,13 @@ import { PRV_KEY } from '../src/backend/constants';
 import { createTx } from '../src/backend/contract/tx';
 import { type DbContract, getAutoSpendContracts, loadContract } from '../src/backend/database';
 import { type P2SHResponse, prepareP2SHResponse } from '../src/backend/p2sh';
+import { getSettings } from '../src/backend/settings';
 
 //
-// constants
+// settings
 //
 
-const CHRONIK_URLS = [
-  'https://chronik.pay2stay.com/xec2',
-  'https://chronik-native1.fabien.cash',
-  'https://chronik-native2.fabien.cash',
-];
+const settings = getSettings();
 
 //
 // main script
@@ -35,7 +32,7 @@ async function main() {
     console.log("Created ECC instance");
 
     console.log("Obtaining blockhain info...");
-    const chronik = new ChronikClient(CHRONIK_URLS);
+    const chronik = new ChronikClient(settings.chronik.urls);
     const tip = await chronik.blockchainInfo();
     console.log("  height", tip.tipHeight)
 

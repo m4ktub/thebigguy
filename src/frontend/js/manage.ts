@@ -1,5 +1,6 @@
 import jquery from 'jquery';
 import { type P2SHResponse } from '../../backend/p2sh';
+import { type SettingsResponse } from '../../backend/settings';
 import { type TxResponse } from '../../backend/tx';
 import { type ScriptUtxo, broadcastTx, streamUtxos } from './chronik';
 import { addr2html, blockHeight2html, bool2html, outpoint2html, share2html, txid2html, xec2html } from './format';
@@ -55,6 +56,10 @@ function updateDetails(options: PageOptions, data: P2SHResponse) {
 }
 
 async function loadUtxos(options: PageOptions, data: P2SHResponse) {
+  // get settings from server
+  const settings = await fetch('/api/settings')
+    .then(res => res.json() as Promise<SettingsResponse>);
+
   // find table and body
   const table = jquery(options.outputs.table);
   const tbody = table.find("tbody");
@@ -67,7 +72,7 @@ async function loadUtxos(options: PageOptions, data: P2SHResponse) {
   let count = 0;
 
   // start stream of utxos
-  const streaming = streamUtxos(data.hash, data.dustValue, utxo => {
+  const streaming = streamUtxos(settings.chronik.urls, data.hash, data.dustValue, utxo => {
     // update count
     count++;
 
@@ -79,7 +84,7 @@ async function loadUtxos(options: PageOptions, data: P2SHResponse) {
     // add or update row for utxo
     const rowId = `utxo-${utxo.outpoint.txid}-${utxo.outpoint.outIdx}`;
     addRowTemplate(tbody, rowTemplate, rowId, row => {
-      updateRow(options, data, utxo, row);
+      updateRow(options, settings, data, utxo, row);
     });
   });
 
@@ -151,7 +156,7 @@ function addRowTemplate(
   }
 }
 
-function updateRow(_options: PageOptions, data: P2SHResponse, utxo: ScriptUtxo, row: JQuery<Node>) {
+function updateRow(_options: PageOptions, settings: SettingsResponse, data: P2SHResponse, utxo: ScriptUtxo, row: JQuery<Node>) {
   // update values
   row.find(".value.block").html(blockHeight2html(utxo.blockHeight));
   row.find(".value.coinbase").html(bool2html(utxo.isCoinbase));
@@ -175,11 +180,11 @@ function updateRow(_options: PageOptions, data: P2SHResponse, utxo: ScriptUtxo, 
 
   // arm click handler, if the button is not disabled
   if (!row.find(".button button").prop("disabled")) {
-    row.find(".button button").on("click", (event) => processUtxo(event, data, utxo));
+    row.find(".button button").on("click", (event) => processUtxo(event, settings, data, utxo));
   }
 }
 
-function processUtxo(event: JQuery.ClickEvent, _data: P2SHResponse, utxo: ScriptUtxo) {
+function processUtxo(event: JQuery.ClickEvent, settings: SettingsResponse, data: P2SHResponse, utxo: ScriptUtxo) {
   // prevent actual click
   event.preventDefault();
 
@@ -195,9 +200,15 @@ function processUtxo(event: JQuery.ClickEvent, _data: P2SHResponse, utxo: Script
   note.text("Processing...");
 
   // build tx creation parameters
-  const params = new URLSearchParams(location.search);
-  params.append("utxo", `${utxo.outpoint.txid}:${utxo.outpoint.outIdx}`);
-  params.append("value", utxo.value.toString());
+  const params = new URLSearchParams();
+  params.set("utxo", `${utxo.outpoint.txid}:${utxo.outpoint.outIdx}`);
+  params.set("value", utxo.value.toString());
+  params.set("fee", data.fee.toString());
+  data.parties.forEach((party, i) => {
+    const n = party.address === settings.address ? 0 : i + 1;
+    params.set(`address${n}`, party.address);
+    params.set(`share${n}`, party.share.toString());
+  });
 
   // create and broadcast transaction
   return fetch(`/api/tx?${params.toString()}`)

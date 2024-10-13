@@ -9,17 +9,16 @@ import {
 } from 'chronik-client';
 export type { ScriptUtxo } from 'chronik-client';
 
-const chronik = new ChronikClient([
-  'https://chronik.pay2stay.com/xec2',
-  'https://chronik-native1.fabien.cash',
-  'https://chronik-native2.fabien.cash',
-]);
+var chronik: ChronikClient;
 
 export function broadcastTx(tx: string) {
   return chronik.broadcastTx(tx, false);
 }
 
-export async function streamUtxos(hash: string, dustValue: number, receiver: (utxo: ScriptUtxo) => void) {
+export async function streamUtxos(urls: string[], hash: string, dustValue: number, receiver: (utxo: ScriptUtxo) => void) {
+  // initialize chronick client with given urls
+  chronik = new ChronikClient(urls);
+
   // start by getting existing utxos
   const response = await chronik.script('p2sh', hash).utxos();
   const utxos = response.utxos;

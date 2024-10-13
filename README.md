@@ -48,6 +48,7 @@ The `etc/systemd` folder contains templates that can be used on a standard Ubunt
 | `COMMISSION_ADDRESS`   | The XEC address for the application's commission address. If not specified then features that require persistence will not be active. When specified, this address will be added as an extra party to the contract. |
 | `COMMISSION_STORE`     | The share value of the store commission or `5` (0.5%), if not specified. |
 | `COMMISSION_AUTOSPEND` | The share value of the auto-spend commission or `20` (2.0%), if not specified. This share value will be added to the commission to store the address. |
+| `CHRONIK_URLS`         | A comma separated list of URLs for Chronik servers. The Cashtab's servers are used by default. |
 
 ### Autospend
 

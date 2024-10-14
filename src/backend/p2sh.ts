@@ -67,7 +67,10 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
         autoSpend: requestedAutoSpend
     };
 
-    // prepare async response
+    // prepare response, which also validates contract bounds
+    const response = prepareP2SHResponse(ecc, contract);
+
+    // setup async response for database chaining
     let async: Promise<any> = Promise.resolve();
 
     // store contract, if requested
@@ -76,7 +79,6 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
     }
 
     // send JSON response and route exception
-    const response = prepareP2SHResponse(ecc, contract);
     async.then(() => res.json(response)).catch(next);
 }
 

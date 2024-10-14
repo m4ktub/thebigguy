@@ -69,9 +69,13 @@ export interface Party {
 
 export function createScript(ecc: Ecc, prvKey: Uint8Array, fee: number, parties: Party[]) {
   // validate number of parties
-  if (parties.length < 2 || parties.length > 6) {
-    // less than 2 is useless, more than 6 will break the 520 byte push limit for the script
-    throw new Error("The contract must have between 2 and 6 parties");
+  if (parties.length < 2 || parties.length > 3) {
+    // less than 2 is useless, more than 3 will break the 520 byte push limit
+    //
+    // The push limit is not broken by the pushes in the input script, or any
+    // single push operation, but by the series of OP_CAT used to reconstruct
+    // the preimage.
+    throw new Error("The contract must have between 2 and 3 parties");
   }
 
   // validate maximum fee to avoid problems with OP_NUM2BIN, after addition

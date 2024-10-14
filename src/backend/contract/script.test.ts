@@ -141,9 +141,9 @@ describe('createScript', () => {
     // number of parties
     expect(() => createScript(ecc, prvKey, 10000, parties())).toThrow();
     expect(() => createScript(ecc, prvKey, 10000, parties(1000))).toThrow();
-    expect(() => createScript(ecc, prvKey, 10000, parties(150, 150, 150, 150, 150, 150, 100))).toThrow();
+    expect(() => createScript(ecc, prvKey, 10000, parties(250, 250, 250, 250))).toThrow();
     expect(createScript(ecc, prvKey, 10000, parties(500, 500))).toBeInstanceOf(Script);
-    expect(createScript(ecc, prvKey, 10000, parties(170, 170, 170, 170, 170, 150))).toBeInstanceOf(Script);
+    expect(createScript(ecc, prvKey, 10000, parties(400, 300, 300))).toBeInstanceOf(Script);
 
     // fee too high
     expect(() => createScript(ecc, prvKey, 2113929217 + 1, parties(500, 500))).toThrow();

@@ -1,7 +1,7 @@
 import { Ecc, toHex } from 'ecash-lib';
 import type { Request, Response } from 'express';
 import { PRV_KEY } from './constants';
-import { createTx } from './contract/tx';
+import { createTx } from 'thebigguy-contract';
 import { queryContract, queryUtxo } from './query';
 
 export interface TxResponse {

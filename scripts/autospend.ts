@@ -1,7 +1,7 @@
 import { type BlockchainInfo, ChronikClient, type ScriptUtxo } from 'chronik-client';
 import { Ecc, initWasm, toHex } from 'ecash-lib';
+import { createTx } from 'thebigguy-contract';
 import { PRV_KEY } from '../src/backend/constants';
-import { createTx } from '../src/backend/contract/tx';
 import { type DbContract, getAutoSpendContracts, loadContract } from '../src/backend/database';
 import { type P2SHResponse, prepareP2SHResponse } from '../src/backend/p2sh';
 import { getSettings } from '../src/backend/settings';

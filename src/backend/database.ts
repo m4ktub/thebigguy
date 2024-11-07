@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as sqlite3 from 'sqlite3';
-import type { Party } from './contract/script';
+import type { Party } from 'thebigguy-contract';
 
 //
 // useful types

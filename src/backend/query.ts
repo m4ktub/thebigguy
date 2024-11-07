@@ -1,6 +1,6 @@
 import * as xecaddr from 'ecashaddrjs';
 import type { Request } from 'express';
-import type { Party } from './contract/script';
+import type { Party } from 'thebigguy-contract';
 
 function queryParty(req: Request, i: number): Party | null {
     const queryAddress = req.query[`address${i}`];
@@ -86,7 +86,7 @@ export function queryUtxo(req: Request) {
         throw new Error(`Invalid value specified, given "${queryValue}"`);
     }
 
-    const parsedValue = BigInt(queryValue.toString());
+    const parsedValue = Number(queryValue.toString());
 
     // result
     return {

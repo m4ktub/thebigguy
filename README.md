@@ -17,16 +17,7 @@ The server can be reached at http://localhost:3000 as will be shown in the conso
 Testing
 -------
 
-The standard target of `npm run test` will run two kinds of tests:
-
- * `test:src`: unit tests that are standalone and can be run any time;
- * `test:rpc`: a script that connects to a local `bitcoind`, in`regtest` mode, through `RPC`;
-
-Each of those individual targets can be run separately, which can be useful if a local node is not running. Otherwise, before launching the tests, you need to run:
-
-```
-$> bitcoind -regtest -rpcuser=rpcuser -rpcpassword=rpcpass
-```
+The standard target of `npm run test` will run unit tests that are standalone and can be run any time.
 
 Deploying
 ---------

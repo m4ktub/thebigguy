@@ -38,10 +38,11 @@
     "compile:backend": "tsc -p tsconfig.json",
     "compile:frontend": "ts-node scripts/bundle.ts src/frontend/js/main.ts",
     "build:backend": "npm run compile:backend && npm run copy:https && npm run copy:database",
-    "build:frontend": "npm run copy:frontend && npm run compile:frontend",
+    "build:frontend": "npm run copy:frontend && npm run copy:wasm && npm run compile:frontend",
     "copy:https": "ts-node scripts/copy.ts etc/https dist/etc/https",
     "copy:database": "ts-node scripts/copy.ts etc/database dist/etc/database",
     "copy:frontend": "ts-node scripts/copy.ts src/frontend dist/src/frontend",
+    "copy:wasm": "ts-node scripts/copy.ts node_modules/ecash-lib/dist/ffi/ecash_lib_wasm_bg_browser.wasm dist/src/frontend/js/ecash_lib_wasm_bg_browser.wasm",
     "build": "npm run clean:dist && npm run build:backend && npm run build:frontend",
     "test": "mocha --config mocharc.json",
     "start": "node dist/src/server.js"

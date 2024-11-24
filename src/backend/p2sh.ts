@@ -1,12 +1,11 @@
 import { Ecc, shaRmd160, toHex } from 'ecash-lib';
 import * as xecaddr from 'ecashaddrjs';
 import type { NextFunction, Request, Response } from 'express';
+import { createScript, createTx, minUnitForAllShares, type Party } from 'thebigguy-contract';
 import { PRV_KEY } from './constants';
-import { type Party, createScript, minUnitForAllShares } from 'thebigguy-contract';
-import { createTx } from 'thebigguy-contract';
 import { type DbContract, storeContract } from './database';
-import { getSettings } from './settings';
 import { queryContract, queryFeatures } from './query';
+import { getSettings, type SettingsResponse } from './settings';
 
 const NULL_TXID = '0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -26,27 +25,44 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
     // create Ecc instance
     const ecc = new Ecc();
 
+    // prepare response, which also validates contract bounds
+    const settings = getSettings();
+    const response = p2shInternal(ecc, settings, req.query);
+
+    // setup async response for database chaining
+    let async: Promise<any> = Promise.resolve();
+
+    // store contract, if requested
+    if (response.store) {
+        async = storeContract(response as DbContract);
+    }
+
+    // send JSON response and route exception
+    async.then(() => res.json(response)).catch(next);
+}
+
+export function p2shInternal(ecc: Ecc, settings: SettingsResponse, query: Record<string, any>) {
     // validate and extract parameters
-    const { fee, parties } = queryContract(req);
-    const requestedFeatures = queryFeatures(req);
+    const { fee, parties } = queryContract(query);
+    const requestedFeatures = queryFeatures(query);
+
+    // validate features, if requested
     const requestedStore = requestedFeatures.includes("store");
     const requestedAutoSpend = requestedFeatures.includes("autospend");
 
-    // validate features, if requested
     if (requestedFeatures.length > 0) {
-        const features = getSettings();
-        if (!features.address) {
+        if (!settings.address) {
             throw new Error("Features were requested but the server does not support features.");
         }
 
-        const serverParty = parties.find(party => party.address === features.address);
+        const serverParty = parties.find(party => party.address === settings.address);
         if (!serverParty) {
             throw new Error("Features were requested but the server was not included as a party.");
         }
 
         let expectedShare = 0;
-        expectedShare += requestedStore ? features.store : 0;
-        expectedShare += requestedAutoSpend ? features.autospend : 0;
+        expectedShare += requestedStore ? settings.store : 0;
+        expectedShare += requestedAutoSpend ? settings.autospend : 0;
         if (serverParty.share != expectedShare) {
             throw new Error("Features were requested but the server was not assigned the expected share.");
         }
@@ -67,19 +83,7 @@ export default function p2sh(req: Request, res: Response, next: NextFunction) {
         autoSpend: requestedAutoSpend
     };
 
-    // prepare response, which also validates contract bounds
-    const response = prepareP2SHResponse(ecc, contract);
-
-    // setup async response for database chaining
-    let async: Promise<any> = Promise.resolve();
-
-    // store contract, if requested
-    if (requestedStore) {
-        async = storeContract(contract);
-    }
-
-    // send JSON response and route exception
-    async.then(() => res.json(response)).catch(next);
+    return prepareP2SHResponse(ecc, contract);
 }
 
 export function prepareP2SHResponse(ecc: Ecc, contract: DbContract): P2SHResponse {

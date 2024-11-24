@@ -6,4 +6,8 @@ function noTypeScript(src: string, dest: String) {
 
 const source = process.argv[2];
 const target = process.argv[3];
-fs.cpSync(source, target, { recursive: true, filter: noTypeScript });
+if (fs.lstatSync(source).isFile()) {
+  fs.copyFileSync(source, target);
+} else {
+  fs.cpSync(source, target, { recursive: true, filter: noTypeScript });
+}

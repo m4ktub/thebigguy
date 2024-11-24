@@ -13,7 +13,7 @@ const program = ts.createProgram([ entry ], {
   noEmit: true,
   esModuleInterop: true,
   module: ts.ModuleKind.CommonJS,
-  target: ts.ScriptTarget.ES2016
+  target: ts.ScriptTarget.ES2020
 });
 
 const diagnostics = ts.getPreEmitDiagnostics(program);
@@ -33,13 +33,23 @@ if (diagnostics.length > 0) {
 //
 
 const globals = {
-  jquery: "$"
+  jquery: "$",
+  // short circuit unused import with potential side-effects
+  "./database": {
+    varName: "{ storeContract: 0 }",
+    namedExports: [ "storeContract" ]
+  }
 };
 
 esbuild.build({
   entryPoints: [ entry ],
   bundle: true,
-  target: [ "es2016" ],
+  target: [ "es2020" ],
   outfile: "dist/src/frontend/js/bundle.js",
-  plugins: [ globalExternals(globals) ]
+  plugins: [ globalExternals(globals) ],
+  // ensure that browser version are used, and remove unused server code
+  platform: 'browser',
+  treeShaking: true,
+  // needed for a correct resolution of the wasm file, based on import.meta
+  format: 'esm'
 });

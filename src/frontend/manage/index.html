@@ -43,11 +43,6 @@
         <span class="value address">...</span>
         <span class="value share">...</span>
       </p>
-      <p class="commission">
-        <span class="label">Commission</span>
-        <span class="value address">...</span>
-        <span class="value share">...</span>
-      </p>
     </section>
     <section id="outputs">
       <table>
@@ -96,25 +91,27 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
-    <script src="/js/bundle.js"></script>
+    <script src="/js/bundle.js" type="module"></script>
     <script>
-      tbg.manage.load({
-        details: {
-          contractAddress: "#contract .summary .address",
-          party1Address: "#contract .party:nth-child(4) .address",
-          party2Address: "#contract .party:nth-child(5) .address",
-          party1Share: "#contract .party:nth-child(4) .share",
-          party2Share: "#contract .party:nth-child(5) .share",
-          fee: "#contract .fee .value",
-          commission: "#contract .commission"
-        },
-        outputs: {
-          table: "#outputs table",
-          tpl: {
-            empty: "#tpl-output-0",
-            row: "#tpl-output-n"
+      $(window).on('load', () => {
+        tbg.manage.load({
+          details: {
+            contractAddress: "#contract .summary .address",
+            party1Address: "#contract .party:nth-child(4) .address",
+            party2Address: "#contract .party:nth-child(5) .address",
+            party1Share: "#contract .party:nth-child(4) .share",
+            party2Share: "#contract .party:nth-child(5) .share",
+            fee: "#contract .fee .value",
+            commission: "#contract .commission"
+          },
+          outputs: {
+            table: "#outputs table",
+            tpl: {
+              empty: "#tpl-output-0",
+              row: "#tpl-output-n"
+            }
           }
-        }
+        });
       });
     </script>
   </body>

@@ -43,11 +43,22 @@ export function getSettings(): SettingsResponse {
         store: toShare(process.env.COMMISSION_STORE, 5),
         autospend: toShare(process.env.COMMISSION_AUTOSPEND, 20),
         chronik: {
-            urls: toList(process.env.CHRONIK_URLS, [
+            urls: toList(process.env.CHRONIK_URLS, getSettingsBrowser().chronik.urls)
+        }
+    };
+}
+
+export function getSettingsBrowser(): SettingsResponse {
+    return {
+        address: undefined,
+        store: 0,
+        autospend: 0,
+        chronik: {
+            urls: [
                 'https://chronik.pay2stay.com/xec2',
                 'https://chronik-native1.fabien.cash',
                 'https://chronik-native2.fabien.cash',
-            ])
+            ]
         }
     };
 }

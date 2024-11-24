@@ -9,16 +9,22 @@ export interface TxResponse {
 }
 
 export default function tx(req: Request, res: Response) {
-    // validate and extract parameters
-    const { fee, parties } = queryContract(req);
-    const utxo = queryUtxo(req);
+    const ecc = new Ecc();
 
     // build transaction
-    const ecc = new Ecc();
-    const tx = createTx(ecc, PRV_KEY, utxo, fee, parties);
+    const tx = txInternal(ecc, req.query);
 
     // send response
-    res.json({
-        tx: toHex(tx.ser())
-    } as TxResponse);
+    res.json(tx);
+}
+
+export function txInternal(ecc: Ecc, query: Record<string, any>): TxResponse {
+    // validate and extract parameters
+    const { fee, parties } = queryContract(query);
+    const utxo = queryUtxo(query);
+
+    // build transaction
+    const tx = createTx(ecc, PRV_KEY, utxo, fee, parties);
+
+    return { tx: toHex(tx.ser()) } as TxResponse;
 }

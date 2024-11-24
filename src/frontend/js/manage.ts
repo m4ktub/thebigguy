@@ -1,8 +1,9 @@
+import { Ecc, initWasm } from 'ecash-lib';
 import jquery from 'jquery';
-import { type P2SHResponse } from '../../backend/p2sh';
-import { type SettingsResponse } from '../../backend/settings';
-import { type TxResponse } from '../../backend/tx';
-import { type ScriptUtxo, broadcastTx, streamUtxos } from './chronik';
+import { p2shInternal, type P2SHResponse } from '../../backend/p2sh';
+import { getSettingsBrowser, type SettingsResponse } from '../../backend/settings';
+import { txInternal } from '../../backend/tx';
+import { broadcastTx, streamUtxos, type ScriptUtxo } from './chronik';
 import { addr2html, blockHeight2html, bool2html, outpoint2html, share2html, txid2html, xec2html } from './format';
 
 interface PageOptions {
@@ -26,18 +27,28 @@ interface OutputsSelectors {
 }
 
 export function load(options: PageOptions) {
-  return fetch(`/api/p2sh${location.search}`)
-    .then(res => res.json() as Promise<P2SHResponse>)
+  // convert search query into record
+  const query = queryFrom(new URLSearchParams(location.search));
+
+  // chain details with loading of utxos
+  const settings = getSettingsBrowser();
+  return initWasm()
+    .then(() => p2shInternal(new Ecc(), settings, query))
     .then(data => updateDetails(options, data))
-    .then(value => loadUtxos(options, value.settings, value.data))
+    .then(data => loadUtxos(options, settings, data))
     .then(data => maybeAddEmptyRow(options, data));
 }
 
-async function updateDetails(options: PageOptions, data: P2SHResponse) {
-  // get settings from server
-  const settings = await fetch('/api/settings')
-    .then(res => res.json() as Promise<SettingsResponse>);
+function queryFrom(params: URLSearchParams) {
+  const query: Record<string, any> = {};
+  for (const [key, value] of params.entries()) {
+    query[key] = value;
+  }
 
+  return query;
+}
+
+async function updateDetails(options: PageOptions, data: P2SHResponse) {
   // get elements
   const feeEl = jquery(options.details.fee);
   const party1AddressEl = jquery(options.details.party1Address);
@@ -45,7 +56,6 @@ async function updateDetails(options: PageOptions, data: P2SHResponse) {
   const party2AddressEl = jquery(options.details.party2Address);
   const party2ShareEl = jquery(options.details.party2Share);
   const contractAddressEl = jquery(options.details.contractAddress);
-  const commissionEl = jquery(options.details.commission);
 
   // set values
   feeEl.html(xec2html(data.fee));
@@ -55,21 +65,7 @@ async function updateDetails(options: PageOptions, data: P2SHResponse) {
   party2ShareEl.html(share2html(data.parties[1].share));
   contractAddressEl.html(addr2html(data.address));
 
-  // set or hide commission values
-  const commissionParty = data.parties.find(party => party.address === settings.address);
-  if (!commissionParty) {
-    commissionEl.hide();
-  } else {
-    commissionEl.find('.address').html(addr2html(commissionParty.address));
-    commissionEl.find('.share').html(share2html(commissionParty.share));
-  }
-
-  // if the contract was stored, change location to the short version
-  if (data.store) {
-    window.history.pushState({}, "", `/h/${data.hash}`);
-  }
-
-  return { settings, data };
+  return data;
 }
 
 async function loadUtxos(options: PageOptions, settings: SettingsResponse, data: P2SHResponse) {
@@ -224,8 +220,10 @@ function processUtxo(event: JQuery.ClickEvent, settings: SettingsResponse, data:
   });
 
   // create and broadcast transaction
-  return fetch(`/api/tx?${params.toString()}`)
-    .then(res => res.json() as Promise<TxResponse>)
+  const ecc = new Ecc();
+  const query = queryFrom(params);
+
+  return Promise.resolve(txInternal(ecc, query))
     .then(data => broadcastTx(data.tx))
     .then(data => {
       td.html(txid2html(data.txid));

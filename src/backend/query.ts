@@ -1,10 +1,9 @@
 import * as xecaddr from 'ecashaddrjs';
-import type { Request } from 'express';
 import type { Party } from 'thebigguy-contract';
 
-function queryParty(req: Request, i: number): Party | null {
-    const queryAddress = req.query[`address${i}`];
-    const queryShare = req.query[`share${i}`];
+function queryParty(query: Record<string, any>, i: number): Party | null {
+    const queryAddress = query[`address${i}`];
+    const queryShare = query[`share${i}`];
 
     if (!queryAddress || !queryShare) {
         return null;
@@ -26,9 +25,9 @@ function queryParty(req: Request, i: number): Party | null {
     };
 }
 
-export function queryContract(req: Request) {
+export function queryContract(query: Record<string, any>) {
     // validate fee
-    const queryFee = req.query.fee;
+    const queryFee = query.fee;
     if (!queryFee) {
         throw new Error("The fee parameter must be specified");
     }
@@ -43,7 +42,7 @@ export function queryContract(req: Request) {
     }
 
     // validate and accumulate parties, commission at the end
-    let parties = [1, 2, 0].map(i => queryParty(req, i)).filter(p => p != null);
+    let parties = [1, 2, 0].map(i => queryParty(query, i)).filter(p => p != null);
 
     // validate number of parties
     if (parties.length < 2 || parties.length > 3) {
@@ -54,9 +53,37 @@ export function queryContract(req: Request) {
     return { fee, parties };
 }
 
-export function queryUtxo(req: Request) {
+export function queryContractInternal(query: Record<string, any>) {
+    // validate fee
+    const queryFee = query.fee;
+    if (!queryFee) {
+        throw new Error("The fee parameter must be specified");
+    }
+
+    const fee = Number(queryFee.toString());
+    if (isNaN(fee) || fee < 1200) {
+        throw new Error("The specified fee is invalid or too low");
+    }
+
+    if (fee > 100000) {
+        throw new Error("The specified fee is too high");
+    }
+
+    // validate and accumulate parties, commission at the end
+    let parties = [1, 2, 0].map(i => queryParty(query, i)).filter(p => p != null);
+
+    // validate number of parties
+    if (parties.length < 2 || parties.length > 3) {
+        throw new Error("Must only provide 2 or 3 addresses for the contract");
+    }
+
+    // result
+    return { fee, parties };
+}
+
+export function queryUtxo(query: Record<string, any>) {
     // validate utxo
-    const queryUtxo = req.query.utxo;
+    const queryUtxo = query.utxo;
     if (!queryUtxo) {
         throw new Error("The utxo parameter must be specified");
     }
@@ -77,7 +104,7 @@ export function queryUtxo(req: Request) {
     }
 
     // validate value
-    const queryValue = req.query.value;
+    const queryValue = query.value;
     if (!queryValue) {
         throw new Error("The value parameter must be specified");
     }
@@ -96,10 +123,10 @@ export function queryUtxo(req: Request) {
     };
 }
 
-export function queryFeatures(req: Request) {
+export function queryFeatures(query: Record<string, any>) {
     var features: string[] = [];
 
-    const enabled = req.query['enable'];
+    const enabled = query['enable'];
     if (!enabled) {
         return features;
     }

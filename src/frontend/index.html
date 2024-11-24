@@ -62,30 +62,6 @@
           </span>
         </p>
         <p>
-          <label>Features:</label>
-          <input id="enablestore" type="checkbox" name="enable" value="store">
-          <label for="enablestore" class="extended">Prettier management address</label>
-          <span class="info"><span class="icon">&nbsp;</span>
-            <span class="note">The generated address is stored by the service providing a 
-              shorter address for the management page.</span>
-          </span>
-        </p>
-        <p class="joined">
-          <label class="placeholder"></label>
-          <input id="enableautospend" type="checkbox" name="enable" value="autospend">
-          <label for="enableautospend" class="extended">Process transactions automatically</label>
-          <span class="info"><span class="icon">&nbsp;</span>
-          <span class="note">The service will monitor transactions and automatically
-            distribute any received XEC. The address must be stored for this.</span>
-          </span>
-        </p>
-        <p class="commission omitted">
-          <label for="address0">Comission:</label>
-          <input id="address0" type="text" name="address0" value="" disabled />
-          <label for="share0">Share:</label>
-          <input id="share0" type="text" name="share0" value="0" disabled />
-        </p>
-        <p>
           <button type="submit">Manage</button>
           <button type="reset">Clear</button>
         </p>
@@ -99,27 +75,20 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
-    <script src="/js/bundle.js"></script>
+    <script src="/js/bundle.js" type="module"></script>
     <script>
-      tbg.examples.rotate("#prompt .example", "#fee", 21);
-      tbg.inputs.mirrorShares("#share0", "#builder input[type='number']");
-      tbg.inputs.validateForm({
-        addresses: "#builder input[type='text'][required]",
-        shares: "#builder input[type='number'][required]",
-        fee: "#fee",
-        commission: {
-          address: "#address0",
-          share: "#share0"
-        }
-      });
-      tbg.inputs.features({
-        commission: {
-          omitted: "#builder form p.commission",
-          address: "#address0",
-          share: "#share0"
-        },
-        store: "#enablestore",
-        autospend: "#enableautospend" 
+      $(window).on('load', () => {
+        tbg.examples.rotate("#prompt .example", "#fee", 21);
+        tbg.inputs.mirrorShares("#share0", "#builder input[type='number']");
+        tbg.inputs.validateForm({
+          addresses: "#builder input[type='text'][required]",
+          shares: "#builder input[type='number'][required]",
+          fee: "#fee",
+          commission: {
+            address: "#address0",
+            share: "#share0"
+          }
+        });
       });
     </script>
   </body>
